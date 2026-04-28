@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 
 from ..core.formatter import DocumentFormatter
-from ..models.template_config import load_template
+from ..templates.template_io import load_template
 from ..utils.logger import get_log_emitter, get_logger
 
 logger = get_logger()
