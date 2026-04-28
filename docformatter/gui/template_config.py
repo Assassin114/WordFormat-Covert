@@ -1,0 +1,428 @@
+"""
+模板配置Tab
+配置模板各项格式
+"""
+
+from pathlib import Path
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
+    QLabel, QPushButton, QGroupBox, QFormLayout,
+    QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox,
+    QCheckBox, QFileDialog, QMessageBox, QListWidget
+)
+from PyQt6.QtCore import Qt
+
+from ..models.template_config import create_default_template, TemplateConfig
+from ..templates.template_io import load_template, save_template
+
+
+class TemplateConfigWidget(QWidget):
+    """
+    模板配置界面
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.template = create_default_template()
+        self.template_path = None
+        self._modified = False
+        
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化UI"""
+        layout = QVBoxLayout(self)
+        
+        # 创建滚动区域
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        
+        # ===== 封面配置 =====
+        cover_group = QGroupBox("封面配置")
+        cover_layout = QFormLayout()
+        
+        self.cover_enabled = QCheckBox("启用封面")
+        self.cover_enabled.setChecked(True)
+        cover_layout.addRow("启用:", self.cover_enabled)
+        
+        self.btn_select_cover = QPushButton("选择封面模板")
+        self.btn_select_cover.clicked.connect(self._select_cover_template)
+        cover_layout.addRow("模板文件:", self.btn_select_cover)
+        
+        self.cover_path_label = QLabel("未选择")
+        cover_layout.addRow("当前文件:", self.cover_path_label)
+        
+        cover_group.setLayout(cover_layout)
+        scroll_layout.addWidget(cover_group)
+        
+        # ===== 签署页配置 =====
+        sig_group = QGroupBox("签署页配置")
+        sig_layout = QFormLayout()
+        
+        self.sig_enabled = QCheckBox("启用签署页")
+        self.sig_enabled.setChecked(True)
+        sig_layout.addRow("启用:", self.sig_enabled)
+        
+        self.btn_select_sig = QPushButton("选择签署页模板")
+        self.btn_select_sig.clicked.connect(self._select_sig_template)
+        sig_layout.addRow("模板文件:", self.btn_select_sig)
+        
+        sig_group.setLayout(sig_layout)
+        scroll_layout.addWidget(sig_group)
+        
+        # ===== 标题格式 =====
+        heading_group = QGroupBox("标题格式 (1-5级)")
+        heading_layout = QVBoxLayout()
+        
+        self.heading_editors = []
+        for level in range(1, 6):
+            editor = HeadingLevelEditor(level)
+            editor.value_changed.connect(self._on_heading_changed)
+            heading_layout.addWidget(editor)
+            self.heading_editors.append(editor)
+        
+        heading_group.setLayout(heading_layout)
+        scroll_layout.addWidget(heading_group)
+        
+        # ===== 正文格式 =====
+        body_group = QGroupBox("正文格式")
+        body_layout = QFormLayout()
+        
+        self.body_font = QLineEdit("宋体")
+        body_layout.addRow("字体:", self.body_font)
+        
+        self.body_size = QDoubleSpinBox()
+        self.body_size.setRange(9, 72)
+        self.body_size.setValue(12)
+        self.body_size.setSuffix(" pt")
+        body_layout.addRow("字号:", self.body_size)
+        
+        self.body_spacing = QDoubleSpinBox()
+        self.body_spacing.setRange(0.5, 4.0)
+        self.body_spacing.setValue(1.5)
+        self.body_spacing.setSingleStep(0.1)
+        body_layout.addRow("行距:", self.body_spacing)
+        
+        self.body_indent = QDoubleSpinBox()
+        self.body_indent.setRange(0, 10)
+        self.body_indent.setValue(2)
+        self.body_indent.setSuffix(" 字符")
+        body_layout.addRow("首行缩进:", self.body_indent)
+        
+        body_group.setLayout(body_layout)
+        scroll_layout.addWidget(body_group)
+        
+        # ===== 题注格式 =====
+        caption_group = QGroupBox("题注格式")
+        caption_layout = QFormLayout()
+        
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(QLabel("图序前缀:"))
+        self.caption_figure = QLineEdit("图")
+        h_layout.addWidget(self.caption_figure)
+        h_layout.addWidget(QLabel("位置:"))
+        self.caption_figure_pos = QComboBox()
+        self.caption_figure_pos.addItems(["下方", "上方"])
+        h_layout.addWidget(self.caption_figure_pos)
+        caption_layout.addRow(h_layout)
+        
+        t_layout = QHBoxLayout()
+        t_layout.addWidget(QLabel("表序前缀:"))
+        self.caption_table = QLineEdit("表")
+        t_layout.addWidget(self.caption_table)
+        t_layout.addWidget(QLabel("位置:"))
+        self.caption_table_pos = QComboBox()
+        self.caption_table_pos.addItems(["上方", "下方"])
+        t_layout.addWidget(self.caption_table_pos)
+        caption_layout.addRow(t_layout)
+        
+        caption_group.setLayout(caption_layout)
+        scroll_layout.addWidget(caption_group)
+        
+        # ===== 页眉页脚 =====
+        hf_group = QGroupBox("页眉页脚")
+        hf_layout = QVBoxLayout()
+        
+        self.hf_first_diff = QCheckBox("首页不同")
+        hf_layout.addWidget(self.hf_first_diff)
+        
+        self.hf_odd_even = QCheckBox("奇偶页不同")
+        hf_layout.addWidget(self.hf_odd_even)
+        
+        hf_group.setLayout(hf_layout)
+        scroll_layout.addWidget(hf_group)
+        
+        # ===== 打印模式 =====
+        print_group = QGroupBox("打印模式")
+        print_layout = QHBoxLayout()
+        
+        self.print_single = QCheckBox("单面打印")
+        self.print_single.setChecked(True)
+        print_layout.addWidget(self.print_single)
+        
+        self.print_duplex = QCheckBox("双面打印")
+        print_layout.addWidget(self.print_duplex)
+        
+        print_group.setLayout(print_layout)
+        scroll_layout.addWidget(print_group)
+        
+        # 设置滚动区域
+        scroll.setWidget(scroll_widget)
+        layout.addWidget(scroll)
+        
+        # ===== 底部按钮 =====
+        btn_layout = QHBoxLayout()
+        
+        self.btn_new = QPushButton("新建")
+        self.btn_new.clicked.connect(self.new_template)
+        btn_layout.addWidget(self.btn_new)
+        
+        self.btn_load = QPushButton("加载模板")
+        self.btn_load.clicked.connect(self.load_template)
+        btn_layout.addWidget(self.btn_load)
+        
+        self.btn_save = QPushButton("保存模板")
+        self.btn_save.clicked.connect(self.save_template)
+        btn_layout.addWidget(self.btn_save)
+        
+        btn_layout.addStretch()
+        
+        layout.addLayout(btn_layout)
+    
+    def _select_cover_template(self):
+        """选择封面模板"""
+        file, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择封面模板",
+            "",
+            "Word文档 (*.docx);;所有文件 (*.*)"
+        )
+        
+        if file:
+            self.template.cover.template_path = file
+            self.cover_path_label.setText(Path(file).name)
+    
+    def _select_sig_template(self):
+        """选择签署页模板"""
+        file, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择签署页模板",
+            "",
+            "Word文档 (*.docx);;所有文件 (*.*)"
+        )
+        
+        if file:
+            self.template.signature.template_path = file
+    
+    def _on_heading_changed(self):
+        """标题格式变更"""
+        self._modified = True
+        self._sync_template()
+    
+    def _sync_template(self):
+        """同步UI到模板对象"""
+        # 同步标题格式
+        for i, editor in enumerate(self.heading_editors):
+            h = self.template.headings[i]
+            h.font.name = editor.font_name
+            h.font.size = editor.font_size
+            h.font.bold = editor.font_bold
+            h.paragraph.line_spacing = editor.line_spacing
+            h.paragraph.space_before = editor.space_before
+            h.paragraph.space_after = editor.space_after
+        
+        # 同步正文格式
+        self.template.body.font.name = self.body_font.text()
+        self.template.body.font.size = self.body_size.value()
+        self.template.body.line_spacing = self.body_spacing.value()
+        self.template.body.first_line_indent = self.body_indent.value() * 10  # 字符转磅
+    
+    def new_template(self):
+        """新建模板"""
+        self.template = create_default_template()
+        self.template_path = None
+        self._sync_ui_from_template()
+        self._modified = False
+    
+    def load_template(self):
+        """加载模板"""
+        file, _ = QFileDialog.getOpenFileName(
+            self,
+            "加载模板",
+            "",
+            "JSON文件 (*.json);;所有文件 (*.*)"
+        )
+        
+        if file:
+            try:
+                self.template = load_template(file)
+                self.template_path = file
+                self._sync_ui_from_template()
+                self._modified = False
+                QMessageBox.information(self, "成功", f"已加载模板:\n{file}")
+            except Exception as e:
+                QMessageBox.warning(self, "失败", f"加载模板失败:\n{str(e)}")
+    
+    def save_template(self):
+        """保存模板"""
+        self._sync_template()
+        
+        file, _ = QFileDialog.getSaveFileName(
+            self,
+            "保存模板",
+            "template.json",
+            "JSON文件 (*.json);;所有文件 (*.*)"
+        )
+        
+        if file:
+            try:
+                save_template(self.template, file)
+                self.template_path = file
+                self._modified = False
+                QMessageBox.information(self, "成功", f"已保存模板:\n{file}")
+            except Exception as e:
+                QMessageBox.warning(self, "失败", f"保存模板失败:\n{str(e)}")
+    
+    def _sync_ui_from_template(self):
+        """同步模板对象到UI"""
+        # 同步标题格式
+        for i, editor in enumerate(self.heading_editors):
+            if i < len(self.template.headings):
+                h = self.template.headings[i]
+                editor.font_name = h.font.name
+                editor.font_size = h.font.size
+                editor.font_bold = h.font.bold
+                editor.line_spacing = h.paragraph.line_spacing
+                editor.space_before = h.paragraph.space_before
+                editor.space_after = h.paragraph.space_after
+        
+        # 同步正文格式
+        self.body_font.setText(self.template.body.font.name)
+        self.body_size.setValue(self.template.body.font.size)
+        self.body_spacing.setValue(self.template.body.line_spacing)
+        self.body_indent.setValue(self.template.body.first_line_indent / 10)
+
+
+class HeadingLevelEditor(QWidget):
+    """单级标题格式编辑器"""
+    
+    value_changed = None  # pyqtSignal
+    
+    def __init__(self, level: int):
+        super().__init__()
+        self.level = level
+        self._font_name = "黑体"
+        self._font_size = 16
+        self._font_bold = False
+        self._line_spacing = 1.5
+        self._space_before = 12
+        self._space_after = 6
+        
+        self._init_ui()
+    
+    def _init_ui(self):
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 5, 0, 5)
+        
+        # 级别标签
+        level_label = QLabel(f"{self.level}级:")
+        level_label.setMinimumWidth(30)
+        layout.addWidget(level_label)
+        
+        # 字体
+        self.font_combo = QComboBox()
+        self.font_combo.addItems(["黑体", "楷体", "宋体", "微软雅黑", "仿宋"])
+        self.font_combo.setCurrentText(self._font_name)
+        self.font_combo.currentTextChanged.connect(self._on_changed)
+        layout.addWidget(QLabel("字体:"))
+        layout.addWidget(self.font_combo)
+        
+        # 字号
+        self.size_spin = QDoubleSpinBox()
+        self.size_spin.setRange(9, 48)
+        self.size_spin.setValue(self._font_size)
+        self.size_spin.setSuffix(" pt")
+        self.size_spin.valueChanged.connect(self._on_changed)
+        layout.addWidget(QLabel("字号:"))
+        layout.addWidget(self.size_spin)
+        
+        # 加粗
+        self.bold_check = QCheckBox("加粗")
+        self.bold_check.setChecked(self._font_bold)
+        self.bold_check.stateChanged.connect(self._on_changed)
+        layout.addWidget(self.bold_check)
+        
+        # 行距
+        self.spacing_spin = QDoubleSpinBox()
+        self.spacing_spin.setRange(1.0, 3.0)
+        self.spacing_spin.setValue(self._line_spacing)
+        self.spacing_spin.setSingleStep(0.1)
+        self.spacing_spin.valueChanged.connect(self._on_changed)
+        layout.addWidget(QLabel("行距:"))
+        layout.addWidget(self.spacing_spin)
+        
+        layout.addStretch()
+    
+    def _on_changed(self):
+        """值变更"""
+        self._font_name = self.font_combo.currentText()
+        self._font_size = self.size_spin.value()
+        self._font_bold = self.bold_check.isChecked()
+        self._line_spacing = self.spacing_spin.value()
+        
+        if self.value_changed:
+            self.value_changed.emit()
+    
+    @property
+    def font_name(self):
+        return self._font_name
+    
+    @font_name.setter
+    def font_name(self, value):
+        self._font_name = value
+        self.font_combo.setCurrentText(value)
+    
+    @property
+    def font_size(self):
+        return self._font_size
+    
+    @font_size.setter
+    def font_size(self, value):
+        self._font_size = value
+        self.size_spin.setValue(value)
+    
+    @property
+    def font_bold(self):
+        return self._font_bold
+    
+    @font_bold.setter
+    def font_bold(self, value):
+        self._font_bold = value
+        self.bold_check.setChecked(value)
+    
+    @property
+    def line_spacing(self):
+        return self._line_spacing
+    
+    @line_spacing.setter
+    def line_spacing(self, value):
+        self._line_spacing = value
+        self.spacing_spin.setValue(value)
+    
+    @property
+    def space_before(self):
+        return self._space_before
+    
+    @space_before.setter
+    def space_before(self, value):
+        self._space_before = value
+    
+    @property
+    def space_after(self):
+        return self._space_after
+    
+    @space_after.setter
+    def space_after(self, value):
+        self._space_after = value
