@@ -11,13 +11,35 @@ from enum import Enum
 class PrintMode(Enum):
     """打印模式"""
     SINGLE = "single"      # 单面打印
-    DUPLEX = "duplex"      # 双面打印
+    DUPLEX = "duplex"       # 双面打印
 
 
 class NumberingMode(Enum):
     """编号模式"""
-    GLOBAL = "global"      # 全文统一编号
-    BY_CHAPTER = "by_chapter"  # 按章节编号
+    GLOBAL = "global"      # 全局连续编号
+    PER_TYPE = "per_type"   # 按类型独立编号
+
+
+class PageNumberFormat(str, Enum):
+    """页码格式"""
+    ARABIC = "arabic"           # 阿拉伯数字 1, 2, 3...
+    ROMAN_LOW = "roman_low"     # 小写罗马数字 i, ii, iii...
+    ROMAN_UP = "roman_up"       # 大写罗马数字 I, II, III...
+    LETTER_LOW = "letter_low"  # 小写字母 a, b, c...
+    LETTER_UP = "letter_up"    # 大写字母 A, B, C...
+
+
+class PageNumberPosition(str, Enum):
+    """页码位置"""
+    HEADER = "header"
+    FOOTER = "footer"
+
+
+class PageNumberAlignment(str, Enum):
+    """页码对齐"""
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
 
 
 @dataclass
@@ -25,7 +47,7 @@ class FontConfig:
     """字体配置"""
     name: str = "宋体"           # 字体名
     size: float = 12.0          # 字号（磅）
-    size_name: str = "小四"      # 中文字号名（一号/小一/二号/.../六号）
+    size_name: str = "小四"      # 中文字号名
     bold: bool = False
     italic: bool = False
     color: str = "#000000"      # RGB hex
@@ -36,40 +58,70 @@ class ParagraphConfig:
     """段落配置"""
     font: FontConfig = field(default_factory=FontConfig)
     line_spacing: float = 1.5    # 行距倍数
-    space_before: float = 0      # 段前间距（磅）
-    space_after: float = 0       # 段后间距（磅）
-    first_line_indent: float = 0 # 首行缩进（磅）
-    alignment: str = "left"      # left/center/right/justify
+    line_spacing_type: str = "multiple"  # 固定值/最小值/单倍/多倍
+    line_spacing_fixed: float = 20  # 固定值时使用（磅）
+    line_spacing_min: float = 15   # 最小值时使用（磅）
+    space_before: float = 0        # 段前间距（磅）
+    space_after: float = 0          # 段后间距（磅）
+    first_line_indent: float = 21  # 首行缩进（磅）
 
 
 @dataclass
 class HeadingConfig:
     """标题配置"""
-    level: int                  # 1-5
+    level: int = 1              # 级别 1-5
     font: FontConfig = field(default_factory=FontConfig)
     paragraph: ParagraphConfig = field(default_factory=ParagraphConfig)
-    outline_level: int = 0      # 大纲级别
 
 
 @dataclass
 class CaptionConfig:
     """题注配置"""
-    prefix_figure: str = "图"    # 图序前缀
-    prefix_table: str = "表"     # 表序前缀
-    prefix_equation: str = "公式" # 公式序前缀
-    numbering_mode: NumberingMode = NumberingMode.GLOBAL
+    figure_prefix: str = "图"
+    table_prefix: str = "表"
+    equation_prefix: str = "公式"
     position_figure: str = "below"   # below/above
     position_table: str = "above"     # below/above
+    font: FontConfig = field(default_factory=FontConfig)
+    paragraph: ParagraphConfig = field(default_factory=ParagraphConfig)
+
+
+@dataclass
+class PageNumberConfig:
+    """页码配置"""
+    format: PageNumberFormat = PageNumberFormat.ARABIC
+    position: PageNumberPosition = PageNumberPosition.FOOTER
+    alignment: PageNumberAlignment = PageNumberAlignment.CENTER
+    font_name: str = "Times New Roman"
+    font_size: float = 10.5
+    font_bold: bool = False
+    font_italic: bool = False
 
 
 @dataclass
 class HeaderFooterConfig:
     """页眉页脚配置"""
-    show_on_first: bool = False      # 首页不同
-    different_odd_even: bool = False # 奇偶页不同
-    header_font: FontConfig = field(default_factory=FontConfig)
-    footer_font: FontConfig = field(default_factory=FontConfig)
-    page_number_format: str = "normal"  # normal/roman
+    # 封面/签署页/修改记录页
+    cover_header_text: str = "文档标题"
+    cover_show_header: bool = True
+    cover_show_footer: bool = False
+    cover_page_number: PageNumberConfig = field(default_factory=PageNumberConfig)
+    
+    # 目录页
+    toc_header_text: str = "目录"
+    toc_show_header: bool = True
+    toc_show_footer: bool = True
+    toc_page_number: PageNumberConfig = field(default_factory=PageNumberConfig)
+    
+    # 正文部分
+    body_header_text: str = "正文"
+    body_show_header: bool = True
+    body_show_footer: bool = True
+    body_page_number: PageNumberConfig = field(default_factory=PageNumberConfig)
+    
+    # 全局设置
+    different_first_page: bool = False
+    different_odd_even: bool = False
 
 
 @dataclass
@@ -117,79 +169,65 @@ def create_default_template() -> TemplateConfig:
     level_spacing_before = [24, 12, 12, 6, 6]
     level_spacing_after = [6, 6, 6, 6, 6]
     level_line_spacing = [2.0, 1.5, 1.5, 1.5, 1.5]
-
+    
     headings = []
-    for i in range(1, 6):
-        headings.append(HeadingConfig(
-            level=i,
+    for i in range(5):
+        h = HeadingConfig(
+            level=i+1,
             font=FontConfig(
-                name=level_names[i-1],
-                size=level_sizes[i-1],
-                bold=level_bolds[i-1]
+                name=level_names[i],
+                size=level_sizes[i],
+                bold=level_bolds[i]
             ),
             paragraph=ParagraphConfig(
-                font=FontConfig(
-                    name=level_names[i-1],
-                    size=level_sizes[i-1],
-                    bold=level_bolds[i-1]
-                ),
-                line_spacing=level_line_spacing[i-1],
-                space_before=level_spacing_before[i-1],
-                space_after=level_spacing_after[i-1]
-            ),
-            outline_level=i
-        ))
-
-    return TemplateConfig(
-        body=ParagraphConfig(
-            font=FontConfig(name="宋体", size=12),
+                line_spacing=level_line_spacing[i],
+                space_before=level_spacing_before[i],
+                space_after=level_spacing_after[i],
+            )
+        )
+        headings.append(h)
+    
+    body = ParagraphConfig(
+        font=FontConfig(name="宋体", size=10.5),
+        line_spacing=1.5,
+        first_line_indent=21
+    )
+    
+    caption = CaptionConfig(
+        font=FontConfig(name="宋体", size=10.5),
+        paragraph=ParagraphConfig(
             line_spacing=1.5,
-            first_line_indent=21,  # 2字符
             space_before=0,
-            space_after=0
-        ),
-        caption=CaptionConfig(),
+            space_after=0,
+        )
+    )
+    
+    header_footer = HeaderFooterConfig()
+    
+    return TemplateConfig(
         headings=headings,
-        header_footer=HeaderFooterConfig()
+        body=body,
+        caption=caption,
+        header_footer=header_footer,
     )
 
 
 @dataclass
 class FormatResult:
-    """单个文档格式化结果"""
-    success: bool
-    input_path: str
-    output_path: str
+    """格式化结果"""
+    success: bool = False
+    input_path: str = ""
+    output_path: str = ""
     figures_processed: int = 0
     tables_processed: int = 0
     equations_processed: int = 0
     errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
 
 
 @dataclass
 class BatchResult:
-    """批量格式化结果"""
-    total: int
-    success_count: int
-    failed_count: int
+    """批量处理结果"""
+    total: int = 0
+    success_count: int = 0
+    failed_count: int = 0
     results: List[FormatResult] = field(default_factory=list)
-
-# 中文标准字号映射
-CHINESE_FONT_SIZES = {
-    '一号': 26,
-    '小一': 24,
-    '二号': 22,
-    '小二': 18,
-    '三号': 16,
-    '小三': 15,
-    '四号': 14,
-    '小四': 12,
-    '五号': 10.5,
-    '小五': 9,
-    '六号': 7.5,
-    '小六': 6.5,
-}
-
-# 反向映射（字号转中文）
-FONT_SIZE_TO_CHINESE = {v: k for k, v in CHINESE_FONT_SIZES.items()}
