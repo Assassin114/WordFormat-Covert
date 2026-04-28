@@ -95,3 +95,98 @@
 7. 字体中英文区分
 8. 封面预览功能
 9. 签署页简化
+
+---
+
+## 页眉页脚详细设计
+
+### 页面类型分类
+
+| 页面类型 | 内容 | 页眉 | 页脚 | 页码格式 |
+|---------|------|------|------|---------|
+| 第1类 | 封面页、签署页、修改记录页 | 统一文本 | 无 | 无 |
+| 第2类 | 目录页 | 统一文本 | 有 | 可选 |
+| 第3类 | 正文部分 | 统一文本 | 有 | 可选 |
+
+### 页码格式（Word标准）
+
+| 格式 | 示例 |
+|------|------|
+| 阿拉伯数字 | 1, 2, 3, ... |
+| 小写罗马数字 | i, ii, iii, iv, ... |
+| 大写罗马数字 | I, II, III, IV, ... |
+| 小写字母 | a, b, c, ... |
+| 大写字母 | A, B, C, ... |
+
+### 页码位置
+- 页脚（页面底部）
+- 页眉（页面顶部）
+
+### 页码对齐
+- 左对齐
+- 居中
+- 右对齐
+
+### 页码字体配置
+- 字体名称（中文/英文）
+- 字体大小
+- 加粗/斜体
+
+### GUI 配置项
+
+```
+页眉页脚设置
+├── 封面页/签署页/修改记录页
+│   ├── 页眉文本：[输入框]
+│   ├── 显示页眉：☑/☐
+│   └── 页脚：无
+├── 目录页
+│   ├── 页眉文本：[输入框]
+│   ├── 显示页眉：☑/☐
+│   ├── 显示页脚：☑/☐
+│   ├── 页码格式：[下拉：阿拉伯数字/小写罗马/大写罗马/小写字母/大写字母]
+│   ├── 页码位置：[下拉：页眉/页脚]
+│   └── 页码对齐：[下拉：左/中/右]
+├── 正文部分
+│   ├── 页眉文本：[输入框]
+│   ├── 显示页眉：☑/☐
+│   ├── 显示页脚：☑/☐
+│   ├── 页码格式：[下拉]
+│   ├── 页码位置：[下拉]
+│   ├── 页码对齐：[下拉]
+│   ├── 页码字体：[选择框]
+│   └── 页码字号：[选择框]
+└── 首页不同：☑/☐
+    奇偶页不同：☑/☐
+```
+
+### 数据模型设计
+
+```python
+class PageNumberConfig:
+    format: str  # "arabic", "roman_low", "roman_up", "letter_low", "letter_up"
+    position: str  # "header", "footer"
+    alignment: str  # "left", "center", "right"
+    font_name: str = "Times New Roman"
+    font_size: float = 10.5
+    font_bold: bool = False
+    font_italic: bool = False
+
+class HeaderFooterConfig:
+    cover_header_text: str = "文档标题"
+    cover_show_header: bool = True
+    cover_show_footer: bool = False
+    
+    toc_header_text: str = "目录"
+    toc_show_header: bool = True
+    toc_show_footer: bool = True
+    toc_page_number: PageNumberConfig
+    
+    body_header_text: str = "正文"
+    body_show_header: bool = True
+    body_show_footer: bool = True
+    body_page_number: PageNumberConfig
+    
+    different_first_page: bool = False
+    different_odd_even: bool = False
+```
