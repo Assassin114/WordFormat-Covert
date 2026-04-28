@@ -99,10 +99,13 @@ class DocumentFormatter:
             # Step 9: 生成目录
             self.toc_gen.generate_toc(doc, self.template.headings)
             
-            # Step 10: 应用页眉页脚设置
-            self._apply_header_footer(doc)
+            # Step 10: 处理横向分节
+            self._handle_landscape_sections(doc)
             
-            # Step 11: 处理打印模式
+            # Step 11: 应用页眉页脚设置
+            self._apply_header_footer_full(doc)
+            
+            # Step 12: 处理打印模式
             self._handle_print_mode(doc)
             
             # Step 12: 保存
@@ -258,9 +261,11 @@ class DocumentFormatter:
         pPr.append(jc)
         
         widowControl = OxmlElement('w:widowControl')
+        widowControl.set(WML_NS + 'val', 'true')
         pPr.append(widowControl)
         
         keepNext = OxmlElement('w:keepNext')
+        keepNext.set(WML_NS + 'val', 'true')
         pPr.append(keepNext)
         
         spacing = OxmlElement('w:spacing')
@@ -333,7 +338,12 @@ class DocumentFormatter:
         pPr.append(jc)
         
         widowControl = OxmlElement('w:widowControl')
+        widowControl.set(WML_NS + 'val', 'true')
         pPr.append(widowControl)
+        
+        keepNext = OxmlElement('w:keepNext')
+        keepNext.set(WML_NS + 'val', 'true')
+        pPr.append(keepNext)
         
         spacing = OxmlElement('w:spacing')
         spacing.set(WML_NS + 'after', '120')
@@ -451,6 +461,54 @@ class DocumentFormatter:
             
             if self.template.header_footer.different_odd_even:
                 section.even_odd_header_footer = True
+    
+    def _handle_landscape_sections(self, doc: Document):
+        """
+        处理分节与横向页面
+        保留横向节的页面设置，不在横向节内插入额外分页符
+        """
+        for section in doc.sections:
+            pgSz = section._element.find('.//' + WML_NS + 'pgSz')
+            if pgSz is not None:
+                orient = pgSz.get(WML_NS + 'orient')
+                w = pgSz.get(WML_NS + 'w')
+                h = pgSz.get(WML_NS + 'h')
+                
+                # 判断是否为横向节
+                is_landscape = (orient == 'landscape') or (w and h and int(w) > int(h))
+                
+                if is_landscape:
+                    logger.debug(f"发现横向节: orient={orient}, w={w}, h={h}")
+                    
+                    if orient == 'landscape':
+                        pass
+                    elif w and h and int(w) > int(h):
+                        pgSz.set(WML_NS + 'orient', 'landscape')
+    
+    def _apply_header_footer_full(self, doc: Document):
+        """
+        完整页眉页脚设置（首页不同、奇偶页不同）
+        """
+        for section in doc.sections:
+            if self.template.header_footer.show_on_first:
+                section.different_first_page_header_footer = True
+            
+            if self.template.header_footer.different_odd_even:
+                section.even_odd_header_footer = True
+            
+            if hasattr(self.template.header_footer, 'header_font'):
+                header = section.header
+                para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+                for run in para.runs:
+                    run.font.name = self.template.header_footer.header_font.name
+                    run.font.size = Pt(self.template.header_footer.header_font.size)
+            
+            if hasattr(self.template.header_footer, 'footer_font'):
+                footer = section.footer
+                para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+                for run in para.runs:
+                    run.font.name = self.template.header_footer.footer_font.name
+                    run.font.size = Pt(self.template.header_footer.footer_font.size)
     
     def _handle_print_mode(self, doc: Document):
         """处理打印模式 - 双面打印时确保文档从偶数页开始"""

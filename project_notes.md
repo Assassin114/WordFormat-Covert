@@ -398,3 +398,57 @@ templates/
 2. 图片引用转换
 3. 代码块识别
 4. 嵌套表格支持
+
+---
+
+## 开发进度更新 (2026-04-28 16:25)
+
+### Bug修复
+1. **cover_replacer.py 语法错误** — f-string中单个`}`导致语法错误
+2. **toc_generator.py 缺少导入** — `HeadingConfig`未导入
+3. **formatter.py 未集成CoverReplacer** — 原来用的是简单字符串替换
+
+### 已集成的模块
+- ✅ DocumentFormatter (formatter.py)
+- ✅ TableHandler (table_handler.py) — 表格格式化
+- ✅ CoverReplacer (cover_replacer.py) — 封面占位符替换
+- ✅ CrossReferenceManager (cross_reference.py) — 交叉引用管理
+- ✅ NumberingManager (numbering.py) — 编号管理
+- ✅ TOCGenerator (toc_generator.py) — 目录生成
+- ✅ StyleMapper (style_mapper.py) — 样式映射
+- ✅ Word2MDConverter (word2md_converter.py) — Word转MD
+
+### Git提交记录
+```
+b5e62c4 fix: integrate CoverReplacer into formatter and fix import errors
+aabac39 feat: enhance template config with cover fields editor and CoverReplacer
+0f955cb feat: add CoverReplacer for structured cover placeholder replacement
+1b1d7fd docs: add SDD and SPEC documents
+16ca0bc feat: DocFormatter v1.0 - Word文档格式化工具
+```
+
+### 集成测试结果
+- ✅ CoverReplacer 替换4个占位符正常
+- ✅ TableHandler 识别并格式化2个测试记录表
+- ✅ DocumentFormatter 实例化正常
+- ✅ Word2MDConverter 转换正常 (1722 chars)
+- ✅ CrossReferenceManager 实例化正常
+
+### 对照SPEC的功能覆盖状态
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 模板配置（封面/签署页/正文/标题） | ✅ | GUI模板配置界面已完成 |
+| 文档格式化 | ✅ | formatter.py核心引擎 |
+| 批量处理 | ✅ | batch_process.py |
+| Word转MD | ✅ | word2md_converter.py |
+| 表格格式化 | ✅ | table_handler.py |
+| 封面占位符替换 | ✅ | CoverReplacer集成 |
+| 交叉引用管理 | ✅ | CrossReferenceManager |
+| 图序/表序/公式编号 | ✅ | NumberingManager |
+| 目录生成 | ✅ | TOCGenerator |
+| 页眉页脚 | ⚠️ | 基础实现 |
+| 打印模式 | ⚠️ | 基础实现 |
+| 孤行控制 | ⚠️ | 需要完善 |
+| 纯文本引用更新 | ✅ | CrossReferenceManager |
+| 书签重命名 | ✅ | CrossReferenceManager |
