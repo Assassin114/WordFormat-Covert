@@ -103,7 +103,8 @@ class DocumentFormatter:
             self._handle_landscape_sections(doc)
             
             # Step 11: 应用页眉页脚设置
-            self._apply_header_footer_full(doc)
+            hf_manager = HeaderFooterManager(self.template)
+            hf_manager.apply(doc)
             
             # Step 12: 处理打印模式
             self._handle_print_mode(doc)
@@ -537,3 +538,115 @@ from .style_mapper import StyleMapper
 from .numbering import NumberingManager
 from .toc_generator import TOCGenerator
 from .cross_reference import CrossReferenceManager
+
+
+class HeaderFooterManager:
+    """
+    页眉页脚管理器（简化版，与header_footer.py保持一致）
+    """
+    
+    TYPE_COVER = "cover"
+    TYPE_TOC = "toc"
+    TYPE_BODY = "body"
+    
+    def __init__(self, template=None):
+        self.template = template
+    
+    def apply(self, doc: Document):
+        section_types = self._analyze_document_structure(doc)
+        logger.info(f"页眉页脚: {len(section_types)} 个节")
+        for i, (section, sect_type) in enumerate(zip(doc.sections, section_types)):
+            self._apply_header_footer_for_section(section, sect_type)
+    
+    def _analyze_document_structure(self, doc) -> list:
+        section_types = []
+        current_type = self.TYPE_COVER
+        has_toc = has_body = False
+        
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if self._is_toc_heading(text):
+                current_type = self.TYPE_TOC
+                has_toc = True
+            if self._is_body_start(text):
+                current_type = self.TYPE_BODY
+                has_body = True
+        
+        if has_toc and has_body:
+            return [self.TYPE_COVER, self.TYPE_TOC, self.TYPE_BODY]
+        elif has_toc:
+            return [self.TYPE_COVER, self.TYPE_TOC]
+        elif has_body:
+            return [self.TYPE_COVER, self.TYPE_BODY]
+        else:
+            return [self.TYPE_COVER]
+    
+    def _is_toc_heading(self, text: str) -> bool:
+        return text in ['目录', 'CONTENTS', 'Table of Contents'] or '目  录' in text
+    
+    def _is_body_start(self, text: str) -> bool:
+        markers = ['第一章', '1.', '一、', '摘要', 'Abstract', '第1章', '引言', 'Introduction']
+        return any(text.startswith(m) for m in markers)
+    
+    def _apply_header_footer_for_section(self, section, sect_type: str):
+        header = section.header
+        footer = section.footer
+        
+        for para in header.paragraphs:
+            para.clear()
+        for para in footer.paragraphs:
+            para.clear()
+        
+        if sect_type == self.TYPE_COVER:
+            self._set_header_text(header, '文档标题')
+        elif sect_type == self.TYPE_TOC:
+            self._set_header_text(header, '目录')
+            self._set_footer_roman(footer)
+        elif sect_type == self.TYPE_BODY:
+            self._set_header_text(header, '正文')
+            self._set_footer_roman(footer)
+    
+    def _set_header_text(self, header, text: str):
+        if header.paragraphs:
+            para = header.paragraphs[0]
+        else:
+            para = header.add_paragraph()
+        para.clear()
+        run = para.add_run(text)
+        run.font.name = '宋体'
+        run.font.size = Pt(10.5)
+        para.alignment = 1
+    
+    def _set_footer_roman(self, footer):
+        if footer.paragraphs:
+            para = footer.paragraphs[0]
+        else:
+            para = footer.add_paragraph()
+        para.clear()
+        para.alignment = 1
+        
+        run = para.add_run()
+        fld_char_begin = OxmlElement('w:fldChar')
+        fld_char_begin.set(WML_NS + 'fldCharType', 'begin')
+        run._r.append(fld_char_begin)
+        
+        run2 = para.add_run()
+        instr_text = OxmlElement('w:instrText')
+        instr_text.set(WML_NS + 'xml:space', 'preserve')
+        instr_text.text = ' PAGE \\* roman '
+        run2._r.append(instr_text)
+        
+        run3 = para.add_run()
+        fld_char_sep = OxmlElement('w:fldChar')
+        fld_char_sep.set(WML_NS + 'fldCharType', 'separate')
+        run3._r.append(fld_char_sep)
+        
+        run4 = para.add_run()
+        t = OxmlElement('w:t')
+        t.text = '1'
+        run4._r.append(t)
+        
+        run5 = para.add_run()
+        fld_char_end = OxmlElement('w:fldChar')
+        fld_char_end.set(WML_NS + 'fldCharType', 'end')
+        run5._r.append(fld_char_end)
