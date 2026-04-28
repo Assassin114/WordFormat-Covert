@@ -6,28 +6,33 @@ DocFormatter - Word文档格式批量处理工具
 import sys
 from pathlib import Path
 
-# 添加项目根目录到路径
-sys.path.insert(0, str(Path(__file__).parent))
+# 获取项目根目录（docformatter/ 的父目录）
+current_file = Path(__file__).resolve()
+project_root = current_file.parent.parent
+
+# 添加到路径
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# 确保可以导入子模块
+import docformatter
+sys.path.insert(0, str(current_file.parent))
 
 from PyQt6.QtWidgets import QApplication
-
-from gui.main_window import MainWindow
+from docformatter.gui.main_window import MainWindow
 
 
 def main():
     """程序入口"""
     app = QApplication(sys.argv)
     
-    # 设置应用信息
     app.setApplicationName("DocFormatter")
     app.setApplicationVersion("1.0.0")
     app.setOrganizationName("DocFormatter")
     
-    # 创建并显示主窗口
     window = MainWindow()
     window.show()
     
-    # 运行应用
     sys.exit(app.exec())
 
 
