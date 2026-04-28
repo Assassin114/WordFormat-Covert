@@ -30,6 +30,7 @@ from ..utils import (
 )
 from ..utils.logger import get_logger
 from .table_handler import TableHandler
+from .cover_replacer import CoverReplacer
 
 logger = get_logger()
 
@@ -157,14 +158,13 @@ class DocumentFormatter:
         if not self.template.cover.fields:
             return
         
-        for para in doc.paragraphs:
-            for run in para.runs:
-                text = run.text
-                for key, value in self.template.cover.fields.items():
-                    placeholder = f"{{{{{key}}}}}"
-                    if placeholder in text:
-                        run.text = text.replace(placeholder, value)
-                        logger.debug(f"替换封面占位符: {placeholder} -> {value}")
+        replacer = CoverReplacer(self.template.cover.fields)
+        count = replacer.replace(doc)
+        logger.info(f"封面占位符替换完成，共替换 {count} 处")
+        
+        # 同时处理表格中的签署页字段
+        count += replacer.replace_table_fields(doc)
+        logger.info(f"签署页字段替换完成，共替换 {count} 处")
     
     def _apply_formats(self, doc, style_mapping: dict):
         """应用格式到所有段落"""

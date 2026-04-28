@@ -4,6 +4,7 @@
 """
 
 from typing import List, Tuple, Optional
+from ..models.template_config import HeadingConfig
 
 from ..utils import is_landscape_section
 

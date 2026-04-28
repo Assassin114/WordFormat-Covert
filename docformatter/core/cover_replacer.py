@@ -154,7 +154,7 @@ class CoverTemplate:
                                 fields[key] = value_map[key]
                             else:
                                 # 使用字段名作为默认值
-                                fields[key] = cls.STANDARD_FIELDS.get(key, f"{{{{{key}}}}")
+                                fields[key] = cls.STANDARD_FIELDS.get(key, '{{' + key + '}}')
         
         return fields
     

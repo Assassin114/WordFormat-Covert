@@ -9,6 +9,7 @@ from .toc_generator import TOCGenerator
 from .cross_reference import CrossReferenceManager
 from .word2md_converter import Word2MDConverter
 from .table_handler import TableHandler
+from .cover_replacer import CoverReplacer
 
 __all__ = [
     'DocumentFormatter',
@@ -18,4 +19,5 @@ __all__ = [
     'CrossReferenceManager',
     'Word2MDConverter',
     'TableHandler',
+    'CoverReplacer',
 ]
