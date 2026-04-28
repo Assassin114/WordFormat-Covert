@@ -10,6 +10,11 @@ class PrintMode(Enum):
     DUPLEX = "duplex"
 
 
+class EquationFormat(Enum):
+    KEEP_ORIGINAL = "keep"       # 保留原格式
+    CONVERT_TO_OMML = "omml"     # 强制转为OMML可编辑公式
+
+
 class NumberingMode(Enum):
     GLOBAL = "global"
     PER_TYPE = "per_type"
@@ -152,6 +157,7 @@ class TemplateConfig:
     table_font: TableFontConfig = field(default_factory=TableFontConfig)
     header_footer: HeaderFooterConfig = field(default_factory=HeaderFooterConfig)
     print_mode: PrintMode = PrintMode.SINGLE
+    equation_format: EquationFormat = EquationFormat.KEEP_ORIGINAL
 
 
 @dataclass

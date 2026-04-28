@@ -326,3 +326,65 @@ class TableStyleConfig:
 
 ### 右侧配置面板
 使用 QStackedWidget 根据左侧选择切换不同配置页面
+
+---
+
+## 公式格式设置
+
+### 需求
+1. **GUI选项**：公式格式选择（保留原格式/强制转为Word可编辑OMML）
+2. **格式转换**：如果文档中存在MathType图片公式，自动转为OMML可编辑公式
+
+### Word文档公式类型
+| 类型 | XML特征 | 说明 |
+|------|---------|------|
+| OMML原生 | `<w:oMath>...</w:oMath>` | Word可编辑公式 |
+| MathType图片 | `<mc:AlternateContent>` 或 `<w:drawing><a:blip>` | MathType图片形式 |
+| 内联OMML | `<m:oMath>...</m:oMath>` (MathML) | MathML内联公式 |
+
+### 检测逻辑
+```python
+def is_math_type_image(para) -> bool:
+    """MathType图片公式识别"""
+    # 方法1: mc:AlternateContent (MathType嵌入)
+    alt = para._element.findall('.//{http://schemas.openxmlformats.org/markup-compatibility/2006}AlternateContent')
+    if alt:
+        return True
+    # 方法2: drawing包含blip的图片
+    drawing = para._element.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}inline')
+    for dr in drawing:
+        blip = dr.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}blip')
+        if blip:
+            # 检查是否是OLE对象或MathType
+            return True
+    return False
+
+def is_native_omml(para) -> bool:
+    """Word原生OMML公式"""
+    omath = para._element.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}oMath')
+    return len(omath) > 0
+```
+
+### 转换策略
+- **MathType → OMML**：调用MathType API（如果有）或保留图片形式
+- **MathML → OMML**：使用OMML schema转换
+- **检测为主**：暂不强制转换，保留用户选择权
+
+### 模型设计
+```python
+class EquationFormat(Enum):
+    KEEP_ORIGINAL = "keep"      # 保留原格式
+    CONVERT_TO_OMML = "omml"    # 强制转为OMML
+
+class TemplateConfig:
+    equation_format: EquationFormat = EquationFormat.KEEP_ORIGINAL
+```
+
+### GUI设计
+```
+公式设置:
+├─ 公式格式: [保留原格式 ▼]
+│            ├─ 保留原格式
+│            └─ 强制转为Word可编辑公式
+└─ 公式编号: [☑] 启用
+```

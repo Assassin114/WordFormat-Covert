@@ -59,29 +59,29 @@ class FontFormatter:
         
         ls_type = paragraph_config.line_spacing_type
         if ls_type == "fixed":
-            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing_fixed * 20)
+            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing_fixed * 20)))
             spacing.set(qn('w:lineRule'), 'exact')
         elif ls_type == "atLeast":
-            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing_min * 20)
+            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing_min * 20)))
             spacing.set(qn('w:lineRule'), 'atLeast')
         elif ls_type == "single":
             spacing.set(qn('w:line'), '240')
             spacing.set(qn('w:lineRule'), 'auto')
         else:
-            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing * 240)
+            spacing.set(qn('w:line'), str(int(paragraph_config.line_spacing * 240)))
             spacing.set(qn('w:lineRule'), 'auto')
         
         if paragraph_config.space_before:
-            spacing.set(qn('w:before'), str(int(paragraph_config.space_before * 20)
+            spacing.set(qn('w:before'), str(int(paragraph_config.space_before * 20)))
         if paragraph_config.space_after:
-            spacing.set(qn('w:after'), str(int(paragraph_config.space_after * 20)
+            spacing.set(qn('w:after'), str(int(paragraph_config.space_after * 20)))
         
         if paragraph_config.first_line_indent:
             ind = pPr.find(qn('w:ind'))
             if ind is None:
                 ind = OxmlElement('w:ind')
                 pPr.append(ind)
-            ind.set(qn('w:firstLine'), str(int(paragraph_config.first_line_indent * 20)
+            ind.set(qn('w:firstLine'), str(int(paragraph_config.first_line_indent * 20)))
         
         alignment_map = {
             "left": WD_ALIGN_PARAGRAPH.LEFT,

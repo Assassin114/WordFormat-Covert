@@ -17,7 +17,7 @@ from lxml import etree
 
 from ..models.template_config import (
     TemplateConfig, FormatResult, BatchResult, 
-    PrintMode, NumberingMode
+    PrintMode, NumberingMode, EquationFormat
 )
 from ..utils import (
     set_paragraph_properties,
@@ -377,14 +377,58 @@ class DocumentFormatter:
         tbl_idx = list(parent).index(tbl_element)
         parent.insert(tbl_idx, new_para)
     
+    def _detect_equation_type(self, para) -> str:
+        """检测公式类型：omml/mathtype_image/unknown"""
+        # 方法1: 直接检查OMML
+        omath_elements = para._element.findall('.//' + WML_NS + 'oMath')
+        if omath_elements:
+            return "omml"
+        
+        # 方法2: 检查MathML内联公式
+        mathml = para._element.findall('.//{http://schemas.openxmlformats.org/officeDocument/2006/math}oMath')
+        if mathml:
+            return "mathml"
+        
+        # 方法3: 检查mc:AlternateContent (MathType嵌入)
+        alt = para._element.findall('.//{http://schemas.openxmlformats.org/markup-compatibility/2006}AlternateContent')
+        if alt:
+            return "mathtype_image"
+        
+        # 方法4: 检查drawing中的blip图片
+        try:
+            from docx.oxml.ns import nsmap
+            drawing = para._element.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}inline')
+            for dr in drawing:
+                blip = dr.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}blip')
+                if blip:
+                    # 检查embed属性是否是MATH公式
+                    embed = blip[0].get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
+                    if embed:
+                        return "mathtype_image"
+        except Exception:
+            pass
+        
+        return "unknown"
+    
     def _process_equations(self, doc: Document) -> int:
-        """处理所有公式：编号、居中"""
+        """处理所有公式：编号、居中、格式转换"""
         count = 0
         equation_num = 0
+        
+        convert_mode = self.template.equation_format == EquationFormat.CONVERT_TO_OMML
         
         for para in doc.paragraphs:
             if self._is_equation_para(para):
                 equation_num += 1
+                
+                # 格式转换：如果是MathType图片且设置为强制转为OMML
+                if convert_mode:
+                    eq_type = self._detect_equation_type(para)
+                    if eq_type in ("mathtype_image", "mathml"):
+                        logger.info(f"  公式段落 [{equation_num}]: 检测到{eq_type}，尝试转换")
+                        # TODO: MathType到OMML转换需要调用MathType COM接口
+                        # 目前仅记录日志，实际转换需要MathType应用程序支持
+                
                 para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 caption_text = self.numbering_mgr.format_equation_caption(equation_num)
                 self._add_equation_number(para, caption_text)
