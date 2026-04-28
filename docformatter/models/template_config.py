@@ -25,6 +25,7 @@ class FontConfig:
     """字体配置"""
     name: str = "宋体"           # 字体名
     size: float = 12.0          # 字号（磅）
+    size_name: str = "小四"      # 中文字号名（一号/小一/二号/.../六号）
     bold: bool = False
     italic: bool = False
     color: str = "#000000"      # RGB hex
@@ -173,3 +174,22 @@ class BatchResult:
     success_count: int
     failed_count: int
     results: List[FormatResult] = field(default_factory=list)
+
+# 中文标准字号映射
+CHINESE_FONT_SIZES = {
+    '一号': 26,
+    '小一': 24,
+    '二号': 22,
+    '小二': 18,
+    '三号': 16,
+    '小三': 15,
+    '四号': 14,
+    '小四': 12,
+    '五号': 10.5,
+    '小五': 9,
+    '六号': 7.5,
+    '小六': 6.5,
+}
+
+# 反向映射（字号转中文）
+FONT_SIZE_TO_CHINESE = {v: k for k, v in CHINESE_FONT_SIZES.items()}

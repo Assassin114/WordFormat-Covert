@@ -118,10 +118,10 @@ class TemplateConfigWidget(QWidget):
         self.body_font = QLineEdit("宋体")
         body_layout.addRow("字体:", self.body_font)
         
-        self.body_size = QDoubleSpinBox()
-        self.body_size.setRange(9, 72)
-        self.body_size.setValue(10.5)
-        self.body_size.setSuffix(" pt")
+        self.body_size = QComboBox()
+        for name in ["一号", "小一", "二号", "小二", "三号", "小三", "四号", "小四", "五号", "小五", "六号", "小六"]:
+            self.body_size.addItem(name)
+        self.body_size.setCurrentText("五号")
         body_layout.addRow("字号:", self.body_size)
         
         self.body_spacing = QDoubleSpinBox()
@@ -534,13 +534,13 @@ class HeadingLevelEditor(QWidget):
         layout.addWidget(self.font_combo)
         
         # 字号
-        self.size_spin = QDoubleSpinBox()
-        self.size_spin.setRange(9, 48)
-        self.size_spin.setValue(self._font_size)
-        self.size_spin.setSuffix(" pt")
-        self.size_spin.valueChanged.connect(self._on_changed)
+        self.size_combo = QComboBox()
+        for name in ["一号", "小一", "二号", "小二", "三号", "小三", "四号", "小四", "五号", "小五", "六号", "小六"]:
+            self.size_combo.addItem(name)
+        self.size_combo.setCurrentText(self._get_chinese_size_name(self._font_size))
+        self.size_combo.currentTextChanged.connect(self._on_size_changed)
         layout.addWidget(QLabel("字号:"))
-        layout.addWidget(self.size_spin)
+        layout.addWidget(self.size_combo)
         
         # 加粗
         self.bold_check = QCheckBox("加粗")
@@ -562,10 +562,41 @@ class HeadingLevelEditor(QWidget):
     def _on_changed(self):
         """值变更"""
         self._font_name = self.font_combo.currentText()
-        self._font_size = self.size_spin.value()
+        self._font_size = self._get_font_size_from_chinese(self.size_combo.currentText())
         self._font_bold = self.bold_check.isChecked()
         self._line_spacing = self.spacing_spin.value()
         self.value_changed.emit()
+    
+    def _on_size_changed(self):
+        """字号变更"""
+        self._font_size = self._get_font_size_from_chinese(self.size_combo.currentText())
+        self.value_changed.emit()
+    
+    @staticmethod
+    def _get_font_size_from_chinese(name: str) -> float:
+        sizes = {
+            "初号": 42, "小初": 36,
+            "一号": 26, "小一": 24,
+            "二号": 22, "小二": 18,
+            "三号": 16, "小三": 15,
+            "四号": 14, "小四": 12,
+            "五号": 10.5, "小五": 9,
+            "六号": 7.5, "小六": 6.5,
+        }
+        return sizes.get(name, 12)
+    
+    @staticmethod
+    def _get_chinese_size_name(size: float) -> str:
+        names = {
+            42: "初号", 36: "小初",
+            26: "一号", 24: "小一",
+            22: "二号", 18: "小二",
+            16: "三号", 15: "小三",
+            14: "四号", 12: "小四",
+            10.5: "五号", 9: "小五",
+            7.5: "六号", 6.5: "小六",
+        }
+        return names.get(size, "小四")
     
     @property
     def font_name(self):
@@ -583,7 +614,7 @@ class HeadingLevelEditor(QWidget):
     @font_size.setter
     def font_size(self, value):
         self._font_size = value
-        self.size_spin.setValue(value)
+        self.size_combo.setCurrentText(self._get_chinese_size_name(value))
     
     @property
     def font_bold(self):
