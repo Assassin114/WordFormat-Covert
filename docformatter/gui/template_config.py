@@ -8,9 +8,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
     QLabel, QPushButton, QGroupBox, QFormLayout,
     QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox,
-    QCheckBox, QFileDialog, QMessageBox, QListWidget
+    QCheckBox, QFileDialog, QMessageBox, QListWidget,
+    QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from ..models.template_config import create_default_template, TemplateConfig
 from ..templates.template_io import load_template, save_template
@@ -33,7 +34,13 @@ class TemplateConfigWidget(QWidget):
         """初始化UI"""
         layout = QVBoxLayout(self)
         
-        # 创建滚动区域
+        # 创建标签页
+        tabs = QTabWidget()
+        
+        # Tab 1: 基础配置
+        tab_basic = QWidget()
+        tab_basic_layout = QVBoxLayout(tab_basic)
+        
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll_widget = QWidget()
@@ -41,33 +48,51 @@ class TemplateConfigWidget(QWidget):
         
         # ===== 封面配置 =====
         cover_group = QGroupBox("封面配置")
-        cover_layout = QFormLayout()
+        cover_layout = QVBoxLayout()
         
         self.cover_enabled = QCheckBox("启用封面")
         self.cover_enabled.setChecked(True)
-        cover_layout.addRow("启用:", self.cover_enabled)
+        cover_layout.addWidget(self.cover_enabled)
         
+        cover_btn_layout = QHBoxLayout()
         self.btn_select_cover = QPushButton("选择封面模板")
         self.btn_select_cover.clicked.connect(self._select_cover_template)
-        cover_layout.addRow("模板文件:", self.btn_select_cover)
+        cover_btn_layout.addWidget(self.btn_select_cover)
         
         self.cover_path_label = QLabel("未选择")
-        cover_layout.addRow("当前文件:", self.cover_path_label)
+        self.cover_path_label.setStyleSheet("color: gray;")
+        cover_btn_layout.addWidget(self.cover_path_label)
+        cover_btn_layout.addStretch()
+        
+        cover_layout.addLayout(cover_btn_layout)
+        
+        # 封面字段编辑按钮
+        self.btn_edit_cover_fields = QPushButton("编辑封面字段...")
+        self.btn_edit_cover_fields.clicked.connect(self._edit_cover_fields)
+        cover_layout.addWidget(self.btn_edit_cover_fields)
         
         cover_group.setLayout(cover_layout)
         scroll_layout.addWidget(cover_group)
         
         # ===== 签署页配置 =====
         sig_group = QGroupBox("签署页配置")
-        sig_layout = QFormLayout()
+        sig_layout = QVBoxLayout()
         
         self.sig_enabled = QCheckBox("启用签署页")
         self.sig_enabled.setChecked(True)
-        sig_layout.addRow("启用:", self.sig_enabled)
+        sig_layout.addWidget(self.sig_enabled)
         
+        sig_btn_layout = QHBoxLayout()
         self.btn_select_sig = QPushButton("选择签署页模板")
         self.btn_select_sig.clicked.connect(self._select_sig_template)
-        sig_layout.addRow("模板文件:", self.btn_select_sig)
+        sig_btn_layout.addWidget(self.btn_select_sig)
+        
+        self.sig_path_label = QLabel("未选择")
+        self.sig_path_label.setStyleSheet("color: gray;")
+        sig_btn_layout.addWidget(self.sig_path_label)
+        sig_btn_layout.addStretch()
+        
+        sig_layout.addLayout(sig_btn_layout)
         
         sig_group.setLayout(sig_layout)
         scroll_layout.addWidget(sig_group)
@@ -95,7 +120,7 @@ class TemplateConfigWidget(QWidget):
         
         self.body_size = QDoubleSpinBox()
         self.body_size.setRange(9, 72)
-        self.body_size.setValue(12)
+        self.body_size.setValue(10.5)
         self.body_size.setSuffix(" pt")
         body_layout.addRow("字号:", self.body_size)
         
@@ -126,6 +151,7 @@ class TemplateConfigWidget(QWidget):
         self.caption_figure_pos = QComboBox()
         self.caption_figure_pos.addItems(["下方", "上方"])
         h_layout.addWidget(self.caption_figure_pos)
+        h_layout.addStretch()
         caption_layout.addRow(h_layout)
         
         t_layout = QHBoxLayout()
@@ -136,6 +162,7 @@ class TemplateConfigWidget(QWidget):
         self.caption_table_pos = QComboBox()
         self.caption_table_pos.addItems(["上方", "下方"])
         t_layout.addWidget(self.caption_table_pos)
+        t_layout.addStretch()
         caption_layout.addRow(t_layout)
         
         caption_group.setLayout(caption_layout)
@@ -168,9 +195,71 @@ class TemplateConfigWidget(QWidget):
         print_group.setLayout(print_layout)
         scroll_layout.addWidget(print_group)
         
-        # 设置滚动区域
+        scroll_layout.addStretch()
         scroll.setWidget(scroll_widget)
-        layout.addWidget(scroll)
+        tab_basic_layout.addWidget(scroll)
+        
+        # Tab 2: 封面字段
+        tab_cover = QWidget()
+        tab_cover_layout = QVBoxLayout(tab_cover)
+        
+        cover_fields_label = QLabel("封面字段编辑（用于替换模板中的占位符）")
+        cover_fields_label.setStyleSheet("color: gray; padding: 5px;")
+        tab_cover_layout.addWidget(cover_fields_label)
+        
+        # 封面字段表格
+        self.cover_fields_table = QTableWidget()
+        self.cover_fields_table.setColumnCount(2)
+        self.cover_fields_table.setHorizontalHeaderLabels(["字段名", "值"])
+        self.cover_fields_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.cover_fields_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._init_cover_fields_table()
+        tab_cover_layout.addWidget(self.cover_fields_table)
+        
+        # 按钮行
+        btn_row = QHBoxLayout()
+        btn_add_field = QPushButton("添加字段")
+        btn_add_field.clicked.connect(self._add_cover_field)
+        btn_row.addWidget(btn_add_field)
+        
+        btn_remove_field = QPushButton("删除选中")
+        btn_remove_field.clicked.connect(self._remove_cover_field)
+        btn_row.addWidget(btn_remove_field)
+        
+        btn_row.addStretch()
+        tab_cover_layout.addLayout(btn_row)
+        
+        # 预定义字段按钮
+        preset_group = QGroupBox("插入预定义字段")
+        preset_layout = QHBoxLayout()
+        
+        presets = [
+            ("合同编号", "contract_no"),
+            ("密级", "classification"),
+            ("年份", "year"),
+            ("单位", "organization"),
+            ("日期", "date"),
+            ("拟制", "drafter"),
+            ("校对", "reviewer"),
+            ("标审", "approver"),
+            ("审核", "checker"),
+            ("批准", "final_approver"),
+        ]
+        
+        for label, key in presets:
+            btn = QPushButton(label)
+            btn.clicked.connect(lambda checked, k=key: self._insert_preset_field(k))
+            preset_layout.addWidget(btn)
+        
+        preset_layout.addStretch()
+        preset_group.setLayout(preset_layout)
+        tab_cover_layout.addWidget(preset_group)
+        
+        # 添加标签页
+        tabs.addTab(tab_basic, "基础配置")
+        tabs.addTab(tab_cover, "封面字段")
+        
+        layout.addWidget(tabs)
         
         # ===== 底部按钮 =====
         btn_layout = QHBoxLayout()
@@ -191,6 +280,76 @@ class TemplateConfigWidget(QWidget):
         
         layout.addLayout(btn_layout)
     
+    def _init_cover_fields_table(self):
+        """初始化封面字段表格"""
+        # 标准封面字段
+        standard_fields = [
+            ("contract_no", "合同编号"),
+            ("classification", "密级"),
+            ("year", "年份"),
+            ("organization", "单位"),
+            ("date", "日期"),
+            ("drafter", "拟制人"),
+            ("drafter_time", "拟制时间"),
+            ("reviewer", "校对人"),
+            ("reviewer_time", "校对时间"),
+            ("approver", "标审人"),
+            ("approver_time", "标审时间"),
+            ("checker", "审核人"),
+            ("checker_time", "审核时间"),
+            ("final_approver", "批准人"),
+            ("final_approver_time", "批准时间"),
+        ]
+        
+        self.cover_fields_table.setRowCount(len(standard_fields))
+        for i, (key, desc) in enumerate(standard_fields):
+            key_item = QTableWidgetItem(key)
+            key_item.setFlags(key_item.flags() & ~Qt.ItemFlag.ItemIsEditable)  # 只读
+            self.cover_fields_table.setItem(i, 0, key_item)
+            
+            value_item = QTableWidgetItem("")
+            value_item.setText(self.template.cover.fields.get(key, ""))
+            self.cover_fields_table.setItem(i, 1, value_item)
+    
+    def _add_cover_field(self):
+        """添加封面字段"""
+        row = self.cover_fields_table.rowCount()
+        self.cover_fields_table.insertRow(row)
+        self.cover_fields_table.setItem(row, 0, QTableWidgetItem(""))
+        self.cover_fields_table.setItem(row, 1, QTableWidgetItem(""))
+    
+    def _remove_cover_field(self):
+        """删除选中的封面字段"""
+        current_row = self.cover_fields_table.currentRow()
+        if current_row >= 0:
+            self.cover_fields_table.removeRow(current_row)
+    
+    def _insert_preset_field(self, key: str):
+        """插入预定义字段"""
+        # 查找是否已存在
+        for row in range(self.cover_fields_table.rowCount()):
+            if self.cover_fields_table.item(row, 0).text() == key:
+                self.cover_fields_table.selectRow(row)
+                return
+        
+        # 添加新行
+        row = self.cover_fields_table.rowCount()
+        self.cover_fields_table.insertRow(row)
+        key_item = QTableWidgetItem(key)
+        key_item.setFlags(key_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        self.cover_fields_table.setItem(row, 0, key_item)
+        self.cover_fields_table.setItem(row, 1, QTableWidgetItem(""))
+        self.cover_fields_table.selectRow(row)
+    
+    def _edit_cover_fields(self):
+        """编辑封面字段（切换到字段Tab）"""
+        # 找到父窗口的tab_widget并切换
+        parent = self.parent()
+        while parent and not hasattr(parent, 'tab_widget'):
+            parent = parent.parent()
+        if parent and hasattr(parent, 'tab_widget'):
+            parent.tab_widget.setCurrentIndex(1)  # 切换到封面字段Tab
+    
     def _select_cover_template(self):
         """选择封面模板"""
         file, _ = QFileDialog.getOpenFileName(
@@ -203,6 +362,7 @@ class TemplateConfigWidget(QWidget):
         if file:
             self.template.cover.template_path = file
             self.cover_path_label.setText(Path(file).name)
+            self._modified = True
     
     def _select_sig_template(self):
         """选择签署页模板"""
@@ -215,6 +375,8 @@ class TemplateConfigWidget(QWidget):
         
         if file:
             self.template.signature.template_path = file
+            self.sig_path_label.setText(Path(file).name)
+            self._modified = True
     
     def _on_heading_changed(self):
         """标题格式变更"""
@@ -237,7 +399,18 @@ class TemplateConfigWidget(QWidget):
         self.template.body.font.name = self.body_font.text()
         self.template.body.font.size = self.body_size.value()
         self.template.body.line_spacing = self.body_spacing.value()
-        self.template.body.first_line_indent = self.body_indent.value() * 10  # 字符转磅
+        self.template.body.first_line_indent = self.body_indent.value() * 10
+    
+    def _sync_cover_fields_to_template(self):
+        """同步封面字段到模板"""
+        self.template.cover.fields = {}
+        for row in range(self.cover_fields_table.rowCount()):
+            key_item = self.cover_fields_table.item(row, 0)
+            value_item = self.cover_fields_table.item(row, 1)
+            if key_item and key_item.text().strip():
+                key = key_item.text().strip()
+                value = value_item.text() if value_item else ""
+                self.template.cover.fields[key] = value
     
     def new_template(self):
         """新建模板"""
@@ -268,6 +441,7 @@ class TemplateConfigWidget(QWidget):
     def save_template(self):
         """保存模板"""
         self._sync_template()
+        self._sync_cover_fields_to_template()
         
         file, _ = QFileDialog.getSaveFileName(
             self,
@@ -285,8 +459,28 @@ class TemplateConfigWidget(QWidget):
             except Exception as e:
                 QMessageBox.warning(self, "失败", f"保存模板失败:\n{str(e)}")
     
+    def get_template(self) -> TemplateConfig:
+        """获取当前模板"""
+        self._sync_template()
+        self._sync_cover_fields_to_template()
+        return self.template
+    
     def _sync_ui_from_template(self):
         """同步模板对象到UI"""
+        # 同步封面路径
+        if self.template.cover.template_path:
+            self.cover_path_label.setText(Path(self.template.cover.template_path).name)
+        
+        # 同步签署页路径
+        if self.template.signature.template_path:
+            self.sig_path_label.setText(Path(self.template.signature.template_path).name)
+        
+        # 同步封面字段
+        for row in range(self.cover_fields_table.rowCount()):
+            key = self.cover_fields_table.item(row, 0).text()
+            if key and key in self.template.cover.fields:
+                self.cover_fields_table.item(row, 1).setText(self.template.cover.fields[key])
+        
         # 同步标题格式
         for i, editor in enumerate(self.heading_editors):
             if i < len(self.template.headings):
@@ -308,7 +502,7 @@ class TemplateConfigWidget(QWidget):
 class HeadingLevelEditor(QWidget):
     """单级标题格式编辑器"""
     
-    value_changed = None  # pyqtSignal
+    value_changed = pyqtSignal()
     
     def __init__(self, level: int):
         super().__init__()
@@ -371,9 +565,7 @@ class HeadingLevelEditor(QWidget):
         self._font_size = self.size_spin.value()
         self._font_bold = self.bold_check.isChecked()
         self._line_spacing = self.spacing_spin.value()
-        
-        if self.value_changed:
-            self.value_changed.emit()
+        self.value_changed.emit()
     
     @property
     def font_name(self):
