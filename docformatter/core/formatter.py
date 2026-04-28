@@ -642,6 +642,13 @@ class HeaderFooterManager:
         run3._r.append(fld_char_sep)
         
         run4 = para.add_run()
+        rPr4 = OxmlElement('w:rPr')
+        rFonts4 = OxmlElement('w:rFonts')
+        rFonts4.set(WML_NS + 'ascii', 'Times New Roman')
+        rFonts4.set(WML_NS + 'hAnsi', 'Times New Roman')
+        rFonts4.set(WML_NS + 'eastAsia', 'Times New Roman')
+        rPr4.append(rFonts4)
+        run4._r.append(rPr4)
         t = OxmlElement('w:t')
         t.text = '1'
         run4._r.append(t)

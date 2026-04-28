@@ -452,3 +452,44 @@ aabac39 feat: enhance template config with cover fields editor and CoverReplacer
 | 孤行控制 | ⚠️ | 需要完善 |
 | 纯文本引用更新 | ✅ | CrossReferenceManager |
 | 书签重命名 | ✅ | CrossReferenceManager |
+
+---
+
+## 开发进度更新 (2026-04-28 16:40)
+
+### 实现的三个功能
+
+#### 1. 孤行控制（widow/keepNext）✅
+- widowControl 和 keepNext 元素设置 val="true"
+- 图序题注（下方）设置 keepNext
+- 表序题注（上方）设置 keepNext
+
+#### 2. 分节与横向页面处理 ✅
+- _handle_landscape_sections() 检测并保留横向节设置
+- 通过 pgSz/orient 判断 landscape
+
+#### 3. 页眉页脚（按页面类型分类）✅
+**新增 HeaderFooterManager 类**，支持三类页面：
+
+| 页面类型 | 页眉 | 页脚 | 页码 |
+|---------|------|------|------|
+| 封面/签署页/修改记录页 | 统一文本 | 无 | 无 |
+| 目录页 | 统一文本 | 有 | 大写罗马数字（I, II...） |
+| 正文部分 | 统一文本 | 有 | 大写罗马数字（从I开始） |
+
+**页码格式：** `PAGE \* roman` 域代码生成大写罗马数字
+
+### Git提交记录
+```
+90c26df feat: implement three-type header/footer system
+5e4ad24 feat: implement widow/keepNext control, landscape section handling
+b5e62c4 fix: integrate CoverReplacer into formatter and fix import errors
+aabac39 feat: enhance template config with cover fields editor
+0f955cb feat: add CoverReplacer for structured cover placeholder replacement
+1b1d7fd docs: add SDD and SPEC documents
+16ca0bc feat: DocFormatter v1.0 - Word文档格式化工具
+```
+
+### 待完善项
+- 页眉页脚文本内容的GUI配置（目前硬编码）
+- 罗马数字起始值的正确设置
