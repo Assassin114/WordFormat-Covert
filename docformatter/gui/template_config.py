@@ -284,6 +284,17 @@ class TemplateConfigWidget(QWidget):
         hf_layout.addWidget(cb2)
         hf_group.setLayout(hf_layout)
         scroll_layout.addWidget(hf_group)
+        
+        # 公式设置
+        eq_group = QGroupBox("公式设置")
+        eq_layout = QVBoxLayout()
+        eq_layout.addWidget(QLabel("公式格式:"))
+        self.eq_format_combo = QComboBox()
+        self.eq_format_combo.addItems(["保留原格式", "强制转为Word可编辑公式"])
+        eq_layout.addWidget(self.eq_format_combo)
+        eq_group.setLayout(eq_layout)
+        scroll_layout.addWidget(eq_group)
+        
         scroll_layout.addStretch()
         scroll.setWidget(scroll_widget)
         layout.addWidget(scroll)
