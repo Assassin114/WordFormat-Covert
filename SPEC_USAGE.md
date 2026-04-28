@@ -190,3 +190,79 @@ class HeaderFooterConfig:
     different_first_page: bool = False
     different_odd_even: bool = False
 ```
+
+---
+
+## 统一字体格式配置
+
+### 设计原则
+所有字体格式配置都通过 `FontFormatter` 统一调用，确保一致性。
+
+### FontFormatter 工具类
+
+```python
+class FontFormatter:
+    """统一字体格式配置"""
+    
+    @staticmethod
+    def apply_font(run, font_config: FontConfig):
+        """应用字体到 run"""
+        run.font.name = font_config.name
+        run.font.size = Pt(font_config.size / 2)  # 转换为半磅
+        run.bold = font_config.bold
+        run.italic = font_config.italic
+        if font_config.color:
+            run.font.color.rgb = RGBColor.from_string(font_config.color)
+    
+    @staticmethod
+    def apply_paragraph(para, paragraph_config: ParagraphConfig):
+        """应用段落格式"""
+        # 行距
+        if paragraph_config.line_spacing_type == "fixed":
+            para.paragraph_format.line_spacing = paragraph_config.line_spacing_fixed
+        elif paragraph_config.line_spacing_type == "atLeast":
+            para.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
+            para.paragraph_format.line_spacing = paragraph_config.line_spacing_min
+        elif paragraph_config.line_spacing_type == "single":
+            para.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+        else:  # multiple
+            para.paragraph_format.line_spacing = paragraph_config.line_spacing
+        
+        # 段前段后
+        para.paragraph_format.space_before = Pt(paragraph_config.space_before)
+        para.paragraph_format.space_after = Pt(paragraph_config.space_after)
+        
+        # 首行缩进
+        if paragraph_config.first_line_indent > 0:
+            para.paragraph_format.first_line_indent = Pt(paragraph_config.first_line_indent)
+```
+
+### 表格字体配置
+
+```python
+class TableFontConfig:
+    """表格字体配置"""
+    # 基础表（常规表格）
+    regular_table: TableStyleConfig
+    
+    # 记录表（测试/试验记录表）
+    record_table: TableStyleConfig
+
+@dataclass
+class TableStyleConfig:
+    """表格样式配置"""
+    header_font: FontConfig      # 表头字体
+    header_bg_color: str        # 表头背景色
+    body_font: FontConfig       # 正文字体
+    header_align: str            # 表头对齐
+    body_align_rule: str         # 正文对齐规则（按字数）
+    body_align_threshold: int    # 短文本阈值
+```
+
+### 使用位置
+- 标题格式化 → FontFormatter
+- 正文格式化 → FontFormatter
+- 表格格式化 → FontFormatter + TableFontConfig
+- 题注格式化 → FontFormatter
+- 页眉页脚 → FontFormatter
+- 页码 → FontFormatter

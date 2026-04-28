@@ -54,3 +54,4 @@ __all__ = [
     'format_file_size',
     'is_valid_docx',
 ]
+from .font_formatter import FontFormatter, TableFontFormatter

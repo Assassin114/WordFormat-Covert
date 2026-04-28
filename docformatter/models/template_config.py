@@ -231,3 +231,21 @@ class BatchResult:
     success_count: int = 0
     failed_count: int = 0
     results: List[FormatResult] = field(default_factory=list)
+
+
+@dataclass
+class TableStyleConfig:
+    """表格样式配置"""
+    header_font: FontConfig = field(default_factory=lambda: FontConfig(name="宋体", size=10.5, bold=True))
+    header_bg_color: str = "E8E8E8"   # 表头背景色
+    body_font: FontConfig = field(default_factory=lambda: FontConfig(name="宋体", size=10.5))
+    header_align: str = "center"     # 表头对齐
+    body_align_rule: str = "text_length"  # 正文对齐规则
+    body_align_threshold: int = 10    # 短文本阈值
+
+
+@dataclass
+class TableFontConfig:
+    """表格字体配置"""
+    regular_table: TableStyleConfig = field(default_factory=TableStyleConfig)
+    record_table: TableStyleConfig = field(default_factory=TableStyleConfig)
