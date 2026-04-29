@@ -61,70 +61,62 @@ class CrossReferenceManager:
     def scan_document(self, doc) -> dict:
         """
         扫描文档，收集所有题注书签、REF引用和纯文本引用
-        
+
         Returns:
             dict: 包含 bookmarks, refs, text_refs
         """
         self.bookmarks.clear()
         self.ref_fields.clear()
         self.text_refs.clear()
-        
-        body = doc.element.body
-        
+
         # 编译正则表达式
         compiled_patterns = {}
         for ref_type, patterns in self.TEXT_REF_PATTERNS.items():
             compiled_patterns[ref_type] = [re.compile(p) for p in patterns]
-        
-        # 遍历所有段落和run，扫描纯文本引用
+
+        # 扫描纯文本引用（段落级别）
         for para in doc.paragraphs:
             for run in para.runs:
                 run_text = run.text
                 if not run_text:
                     continue
-                
-                # 检查纯文本引用
                 for ref_type, patterns in compiled_patterns.items():
                     for pattern in patterns:
                         for match in pattern.finditer(run_text):
-                            # 提取编号
                             num_str = match.group(1) if match.groups() else match.group(0)
                             try:
                                 num = int(num_str)
                                 self.text_refs.append((
                                     ref_type,
-                                    match.group(0),  # 完整匹配文本，如"图1"
+                                    match.group(0),
                                     num,
                                     para._element,
                                     run._element
                                 ))
-                                logger.debug(f"找到纯文本引用: {match.group(0)} (type={ref_type}, num={num})")
                             except ValueError:
                                 pass
-        
-        # 扫描书签
-        for elem in body.iter():
-            # bookmarkStart
-            bookmark_start = elem.find('.//' + WML_NS + 'bookmarkStart')
-            if bookmark_start is not None:
-                name = bookmark_start.get(WML_NS + 'name')
+
+        # 扫描书签和 REF 域（段落级别）
+        for para in doc.paragraphs:
+            # 查找段落中的 bookmarkStart
+            for bm_start in para._element.iter(WML_NS + 'bookmarkStart'):
+                name = bm_start.get(WML_NS + 'name')
                 if name and self._is_caption_bookmark(name):
                     bookmark_type, num = self._parse_bookmark_name(name)
                     if bookmark_type:
                         self.bookmarks[name] = (bookmark_type, num)
-                        logger.debug(f"找到题注书签: {name} (type={bookmark_type}, num={num})")
-            
-            # 扫描REF域
-            instr_texts = elem.findall('.//' + WML_NS + 'instrText')
+
+            # 查找段落中的 REF 域
+            instr_texts = para._element.findall('.//' + WML_NS + 'instrText')
             for instr in instr_texts:
                 if instr.text and 'REF' in instr.text:
                     bookmark_name = self._extract_ref_target(instr.text)
                     if bookmark_name:
                         if bookmark_name not in self.ref_fields:
                             self.ref_fields[bookmark_name] = []
-                        self.ref_fields[bookmark_name].append(elem)
-                        logger.debug(f"找到REF引用: {bookmark_name}")
-        
+                        # 存储段落元素（而非 body 或其他祖先）
+                        self.ref_fields[bookmark_name].append(para._element)
+
         return {
             'bookmarks': self.bookmarks.copy(),
             'refs': {k: v.copy() for k, v in self.ref_fields.items()},
@@ -198,29 +190,35 @@ class CrossReferenceManager:
                 run_elem.text = new_text
                 logger.debug(f"更新纯文本引用: {match_text} -> {new_text[0]}{new_num}")
     
-    def _update_ref_display_text(self, field_elem: etree._Element, new_num: str):
+    def _update_ref_display_text(self, para_elem: etree._Element, new_num: str):
         """
-        更新REF域的显示文本
-        
-        REF域结构：
+        更新 REF 域的显示文本
+
+        REF 域结构（同一段落内，兄弟级 w:r 元素）：
         <w:r><w:fldChar w:fldCharType="begin"/></w:r>
         <w:r><w:instrText> REF xxx </w:instrText></w:r>
         <w:r><w:fldChar w:fldCharType="separate"/></w:r>
         <w:r><w:t>旧编号</w:t></w:r>  ← 更新这里
         <w:r><w:fldChar w:fldCharType="end"/></w:r>
         """
-        found_separate = False
-        for child in field_elem.iter():
-            if child.tag == WML_NS + 'fldChar':
-                fld_type = child.get(WML_NS + 'fldCharType')
+        found_sep = False
+        for child in para_elem:
+            if child.tag != WML_NS + 'r':
+                continue
+            fld_char = child.find(WML_NS + 'fldChar')
+            if fld_char is not None:
+                fld_type = fld_char.get(WML_NS + 'fldCharType')
                 if fld_type == 'separate':
-                    found_separate = True
+                    found_sep = True
+                    continue
                 elif fld_type == 'end':
-                    break
-            elif found_separate and child.tag == WML_NS + 't':
-                child.text = new_num
-                logger.debug(f"REF域显示文本更新为: {new_num}")
-                break
+                    found_sep = False
+                    continue
+            if found_sep:
+                t_elem = child.find(WML_NS + 't')
+                if t_elem is not None:
+                    t_elem.text = new_num
+                    found_sep = False
     
     def get_captions_by_type(self, ref_type: str) -> List[int]:
         """

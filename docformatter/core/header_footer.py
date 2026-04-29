@@ -42,31 +42,33 @@ class HeaderFooterManager:
     
     def _analyze_document_structure(self, doc) -> list:
         """分析文档结构，返回每节的类型列表"""
-        section_types = []
-        current_type = self.TYPE_COVER
         section_starts = self._get_section_starts(doc)
-        section_count = 0
-        
+        section_count = len(section_starts) + 1  # 实际节数
+
+        # 逐节判定类型
+        current_type = self.TYPE_COVER
+        section_types = []
+
         for i, para in enumerate(doc.paragraphs):
             text = para.text.strip()
-            
+
             if i in section_starts and section_count > 0:
                 section_types.append(current_type)
                 current_type = self.TYPE_COVER
-            
-            section_count = i // max(1, len(doc.paragraphs) // max(1, len(section_starts) or 1))
-            
+
             if self._is_toc_heading(text):
                 current_type = self.TYPE_TOC
-            
             if self._is_body_start(text):
                 current_type = self.TYPE_BODY
-        
+
         section_types.append(current_type)
-        
-        if len(section_types) == 1:
-            section_types = self._refine_single_section(doc, section_types[0])
-        
+
+        # 确保类型列表长度匹配实际节数
+        if len(section_types) < section_count:
+            section_types += [self.TYPE_BODY] * (section_count - len(section_types))
+        elif len(section_types) > section_count:
+            section_types = section_types[:section_count]
+
         return section_types
     
     def _get_section_starts(self, doc) -> set:
@@ -89,21 +91,7 @@ class HeaderFooterManager:
         """判断是否为正文开始"""
         body_markers = ['第一章', '1.', '一、', '摘要', 'Abstract', '第1章', '引言', 'Introduction']
         return any(text.startswith(m) for m in body_markers)
-    
-    def _refine_single_section(self, doc, default_type: str) -> list:
-        """细化单节文档的类型判断"""
-        has_toc = any(self._is_toc_heading(p.text.strip()) for p in doc.paragraphs)
-        has_body = any(self._is_body_start(p.text.strip()) for p in doc.paragraphs)
-        
-        if has_toc and has_body:
-            return [self.TYPE_COVER, self.TYPE_TOC, self.TYPE_BODY]
-        elif has_toc:
-            return [self.TYPE_COVER, self.TYPE_TOC]
-        elif has_body:
-            return [self.TYPE_COVER, self.TYPE_BODY]
-        else:
-            return [self.TYPE_COVER]
-    
+
     def _apply_header_footer_for_section(self, section, sect_type: str, section_index: int):
         """为指定节应用页眉页脚"""
         header = section.header
@@ -125,17 +113,17 @@ class HeaderFooterManager:
     
     def _get_cover_header_text(self) -> str:
         if self.template and hasattr(self.template, 'header_footer'):
-            return getattr(self.template.header_footer, 'cover_header_text', '文档标题')
+            return self.template.header_footer.cover_page.header_text or '文档标题'
         return '文档标题'
-    
+
     def _get_toc_header_text(self) -> str:
         if self.template and hasattr(self.template, 'header_footer'):
-            return getattr(self.template.header_footer, 'toc_header_text', '目录')
+            return self.template.header_footer.toc_page.header_text or '目录'
         return '目录'
-    
+
     def _get_body_header_text(self) -> str:
         if self.template and hasattr(self.template, 'header_footer'):
-            return getattr(self.template.header_footer, 'body_header_text', '正文')
+            return self.template.header_footer.body_page.header_text or '正文'
         return '正文'
     
     def _set_header_text(self, header, text: str):

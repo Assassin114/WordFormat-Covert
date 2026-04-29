@@ -1,6 +1,6 @@
 """
-样式映射模块
-分析原始文档样式，建立到目标模板的映射关系
+样式映射模块 (已废弃)
+@deprecated: 此模块已被 document_analyzer.DocumentAnalyzer 替代。
 """
 
 from typing import Dict, Optional, List

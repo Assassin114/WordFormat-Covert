@@ -11,8 +11,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 
 from .template_config import TemplateConfigWidget
-from .batch_process import BatchProcessWidget
-from .word2md_tab import Word2MDWidget
+from .doc_process import DocProcessWidget
 from ..utils.logger import get_log_emitter, setup_logger
 
 
@@ -20,38 +19,37 @@ class MainWindow(QMainWindow):
     """
     DocFormatter 主窗口
     """
-    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("DocFormatter - Word文档格式批量处理工具")
         self.setMinimumSize(900, 650)
-        
+
         # 设置日志
         setup_logger()
-        
+
         # 初始化UI
         self._init_ui()
-    
+
     def _init_ui(self):
         """初始化UI"""
         # 创建中央部件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        
+
         # 布局
         layout = QVBoxLayout(central_widget)
-        
-        # Tab部件
+
+        # Tab部件：2个 Tab
         self.tab_widget = QTabWidget()
-        self.tab_widget.addTab(TemplateConfigWidget(), "模板配置")
-        self.tab_widget.addTab(BatchProcessWidget(), "批量处理")
-        self.tab_widget.addTab(Word2MDWidget(), "Word转MD")
-        
+        self.tab_widget.addTab(TemplateConfigWidget(), "模板编辑")
+        self.tab_widget.addTab(DocProcessWidget(), "文档处理")
+
         layout.addWidget(self.tab_widget)
-        
+
         # 菜单栏
         self._create_menu_bar()
-        
+
         # 状态栏
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -120,24 +118,28 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "关于 DocFormatter",
-            "DocFormatter v1.0.0\n\n"
+            "DocFormatter v2.0.0\n\n"
             "Word文档格式批量处理工具\n"
-            "基于Python + PyQt6开发\n\n"
+            "基于Python + PyQt6开发\n"
+            "两段式架构：Word→MD→Word\n\n"
             "功能：\n"
-            "- 模板配置与批量格式化\n"
+            "- 模板编辑：设置文档格式模板\n"
+            "- 文档处理：Word格式整理 / Word→MD / MD→Word\n"
             "- 图序/表序/公式序自动编号\n"
-            "- Word转Markdown"
+            "- 交叉引用/脚注/Visio OLE 提取"
         )
-    
+
     def _on_manual(self):
         """使用说明"""
         QMessageBox.information(
             self,
             "使用说明",
             "DocFormatter 使用说明\n\n"
-            "1. 模板配置：设置文档格式模板\n"
-            "2. 批量处理：选择文档进行批量格式化\n"
-            "3. Word转MD：将Word文档转换为Markdown\n\n"
+            "1. 模板编辑：设置文档格式模板（字体、段落、页眉页脚等）\n"
+            "2. 文档处理：\n"
+            "   - Word格式整理：Word→MD→Word 两段式格式化\n"
+            "   - Word→MD：将Word转换为Markdown中间态\n"
+            "   - MD→Word：从Markdown生成格式化Word文档\n\n"
             "详细使用请参考帮助文档。"
         )
     

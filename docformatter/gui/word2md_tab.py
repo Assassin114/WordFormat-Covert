@@ -1,6 +1,6 @@
 """
-Word转MD模块
-将Word文档转换为Markdown
+Word转MD模块 (已废弃)
+@deprecated: 此模块已被 doc_process.DocProcessWidget 替代。
 """
 
 from pathlib import Path

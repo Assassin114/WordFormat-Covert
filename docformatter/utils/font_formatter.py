@@ -19,20 +19,26 @@ class FontFormatter:
         """应用字体到 run"""
         if not font_config:
             return
-        
-        run.font.name = font_config.name
-        
-        if font_config.size:
-            run.font.size = Pt(font_config.size / 2)
-        
+
+        run.font.name = font_config.en_name
         run.bold = font_config.bold
         run.italic = font_config.italic
-        
-        if font_config.name:
-            try:
-                run._element.rPr.rFonts.set(qn('w:eastAsia'), font_config.name)
-            except:
-                pass
+
+        # 设置中英文字体
+        try:
+            rPr = run._element.get_or_add_rPr()
+            rFonts = rPr.find(qn('w:rFonts'))
+            if rFonts is None:
+                rFonts = OxmlElement('w:rFonts')
+                rPr.insert(0, rFonts)
+            rFonts.set(qn('w:eastAsia'), font_config.cn_name)
+            rFonts.set(qn('w:ascii'), font_config.en_name)
+            rFonts.set(qn('w:hAnsi'), font_config.en_name)
+        except Exception:
+            pass
+
+        if font_config.size:
+            run.font.size = Pt(font_config.size)
         
         if font_config.color and font_config.color != "#000000":
             try:

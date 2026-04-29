@@ -8,12 +8,15 @@ from ..models.template_config import HeadingConfig
 
 from ..utils import is_landscape_section
 
+WML_NS = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+
 
 class TOCGenerator:
     """
     目录生成器
+    @deprecated: TOC 域的实际生成逻辑已移至 md2word_converter._create_toc_page()
     """
-    
+
     def __init__(self):
         self._toc_heading_idx: Optional[int] = None
     
@@ -40,49 +43,9 @@ class TOCGenerator:
     
     def generate_toc(self, doc, heading_configs: List[HeadingConfig]):
         """
-        生成目录
-        
-        流程：
-        1. 查找目录标题位置
-        2. 收集所有标题及其级别
-        3. 在目录标题后插入 TOC 域
-        
-        Args:
-            doc: python-docx Document 对象
-            heading_configs: 标题配置列表
+        @deprecated: 实际 TOC 域生成已迁移至 MD2WordConverter._create_toc_page()
         """
-        # 查找目录位置
-        toc_idx = self.find_toc_position(doc)
-        if toc_idx is None:
-            return  # 未找到目录标题，跳过
-        
-        # 收集标题
-        headings = []
-        for para in doc.paragraphs[toc_idx + 1:]:
-            level = self._get_heading_level(para)
-            if level is not None:
-                text = para.text.strip()
-                if text:  # 只收集有文本的标题
-                    headings.append((level, text))
-        
-        # 插入 TOC
-        # 注意：Word 的 TOC 需要通过域代码实现
-        # 这里先找到插入位置，然后在目录标题后第一个段落插入占位符
-        # 实际生成需要在 Word 中更新域
-        
-        # 简化处理：在目录标题后插入一个说明段落
-        # 用户需要在 Word 中右键点击目录区域，选择"更新域"来生成完整目录
-        insert_idx = toc_idx + 1
-        
-        # 如果下一段已经是占位符，跳过
-        if insert_idx < len(doc.paragraphs):
-            next_para = doc.paragraphs[insert_idx]
-            if '[TOC]' in next_para.text or '目录占位符' in next_para.text:
-                return
-        
-        # 插入占位符段落
-        # 这里不做实际插入，因为 python-docx 的 TOC 支持有限
-        # 建议用户在实际文档中手动插入 TOC 域
+        return
     
     def _get_heading_level(self, para) -> Optional[int]:
         """
@@ -115,17 +78,16 @@ class TOCGenerator:
     def is_landscape_section_before(self, doc, para_idx: int) -> bool:
         """
         检查指定段落之前的节是否为横向
-        
-        Args:
-            doc: python-docx Document 对象
-            para_idx: 段落索引
-        
-        Returns:
-            bool: 如果段落所在节是横向，返回 True
+
+        通过检查该段落所在 section 的 pgSz/orient 来判断。
         """
         for section in doc.sections:
-            # 检查该节是否包含指定段落
-            # 这是简化实现，实际需要更精确的节边界判断
-            if is_landscape_section(section):
-                return True
+            sect_pr = section._element.find(WML_NS + 'sectPr') if section._element.tag != WML_NS + 'sectPr' else section._element
+            if sect_pr is None:
+                sect_pr = section._element
+            pg_sz = sect_pr.find(WML_NS + 'pgSz')
+            if pg_sz is not None:
+                orient = pg_sz.get(WML_NS + 'orient', '')
+                if orient == 'landscape':
+                    return True
         return False

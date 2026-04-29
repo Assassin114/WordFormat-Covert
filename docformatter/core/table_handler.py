@@ -218,4 +218,4 @@ class TableHandler:
                 run.font.name = style["font"]
                 run._element.rPr.rFonts.set(qn('w:eastAsia'), style["font"])
             if "size" in style:
-                run.font.size = Pt(style["size"] / 2)
+                run.font.size = Pt(style["size"])

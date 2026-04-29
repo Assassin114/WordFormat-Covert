@@ -1,6 +1,6 @@
 """
-批量处理模块
-批量选择文件、启动处理、显示进度
+批量处理模块 (已废弃)
+@deprecated: 此模块已被 doc_process.DocProcessWidget 替代。
 """
 
 import traceback

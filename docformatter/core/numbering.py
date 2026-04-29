@@ -84,10 +84,27 @@ class NumberingManager:
         """
         self.reset()
         
-        # 扫描图片（通过关系）
+        # 扫描图片（通过关系 + drawing 元素双重检测）
+        seen_images = set()
         for rel in doc.part.rels.values():
             if "image" in rel.target_ref:
-                self.get_next_figure_num()
+                rel_id = rel.rId
+                if rel_id not in seen_images:
+                    seen_images.add(rel_id)
+                    self.get_next_figure_num()
+
+        # 补充：扫描 paragraph 中的 drawing/inline/anchor（遗漏的内嵌图片）
+        for para in doc.paragraphs:
+            xmlns_dml = '{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}'
+            if (para._element.findall('.//' + WML_NS + 'drawing') or
+                para._element.findall('.//' + xmlns_dml + 'inline') or
+                para._element.findall('.//' + xmlns_dml + 'anchor')):
+                # 检查是否已经通过 rels 计数过
+                for blip in para._element.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}blip'):
+                    embed = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed', '')
+                    if embed and embed not in seen_images:
+                        seen_images.add(embed)
+                        self.get_next_figure_num()
         
         # 扫描表格
         for table in doc.tables:

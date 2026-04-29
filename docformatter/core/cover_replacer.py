@@ -153,8 +153,23 @@ class CoverTemplate:
                             if value_map and key in value_map:
                                 fields[key] = value_map[key]
                             else:
-                                # 使用字段名作为默认值
                                 fields[key] = cls.STANDARD_FIELDS.get(key, '{{' + key + '}}')
+
+        # 也扫描表格中的占位符
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        for run in para.runs:
+                            text = run.text
+                            if text:
+                                placeholders = re.findall(r'\{\{(\w+)\}\}', text)
+                                for key in placeholders:
+                                    if key not in fields:
+                                        if value_map and key in value_map:
+                                            fields[key] = value_map[key]
+                                        else:
+                                            fields[key] = cls.STANDARD_FIELDS.get(key, '{{' + key + '}}')
         
         return fields
     

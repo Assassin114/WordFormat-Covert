@@ -27,7 +27,7 @@ def main():
     app = QApplication(sys.argv)
     
     app.setApplicationName("DocFormatter")
-    app.setApplicationVersion("1.0.0")
+    app.setApplicationVersion("2.0.0")
     app.setOrganizationName("DocFormatter")
     
     window = MainWindow()
