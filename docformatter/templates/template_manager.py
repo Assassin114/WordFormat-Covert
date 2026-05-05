@@ -32,6 +32,8 @@ def _user_templates_dir() -> Path:
 
 
 def _builtin_dir() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(sys._MEIPASS) / "docformatter" / "templates" / "builtin"
     return Path(__file__).parent / "builtin"
 
 

@@ -34,60 +34,48 @@
 
 ---
 
-## 安装 Python 环境
+## 安装与启动
 
-### Windows
+**不需要安装 Python，不需要懂编程。**
 
-1. 打开 [python.org](https://python.org/downloads/)
-2. 下载最新的 Python（3.10 或以上）
-3. 安装时 **务必勾选 "Add Python to PATH"**（底部复选框）
-4. 安装完成后，按 `Win + R`，输入 `cmd`，回车，打开命令提示符
-5. 输入 `python --version`，看到类似 `Python 3.12.x` 就说明装好了
+### 快速开始（推荐）
 
-### macOS
+1. 从同事或发布页面获取 `DocFormatter.zip` 压缩包
+2. 解压到任意文件夹（比如桌面）
+3. 双击 `DocFormatter.exe`（Windows）或可执行文件（Linux/macOS）
+4. 稍等几秒，窗口出现即可使用
 
-1. 打开 [python.org](https://python.org/downloads/) 下载安装器
-2. 或者打开终端，输入 `brew install python3`
+> 就这么简单。没有"装Python"、"配环境"、"输命令"这些步骤。
 
-### Linux（Ubuntu/Debian）
+### 开发者安装（想改代码或自己打包）
 
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv
-```
-
----
-
-## 安装本项目
-
-### 1. 下载代码
-
-你的同事把代码放在了 GitHub 上。请他从仓库页面点击绿色的 **Code** 按钮 → **Download ZIP**，解压到你喜欢的文件夹（比如桌面）。
-
-### 2. 安装依赖
-
-打开终端/命令提示符，进入项目目录：
+如果你懂 Python，想从源码运行：
 
 ```bash
-cd WordFormat-Covert/docformatter
+# 1. 下载代码
+git clone <仓库地址>
+cd WordFormat-Covert
+
+# 2. 安装依赖
+cd docformatter
 pip install -r requirements.txt
-```
 
-等待几分钟，看到 `Successfully installed` 就完成了。
-
-> 如果 `pip` 报 "command not found"，换成 `pip3` 试试。
-
----
-
-## 启动程序
-
-在项目根目录（`WordFormat-Covert/`）下执行：
-
-```bash
+# 3. 启动
+cd ..
 python -m docformatter.main
 ```
 
-稍等几秒，会出现一个带菜单栏的窗口，窗口标题是 **DocFormatter - 2.0.0**。
+**自己打包成可执行文件**：
+
+```bash
+# Windows
+build.bat
+
+# Linux / macOS
+bash build.sh
+```
+
+打包完成后，`dist/DocFormatter/` 就是可分发的程序文件夹。
 
 ---
 
@@ -317,27 +305,16 @@ toc_enabled: true
 
 ## 常见问题
 
-### Q: "python 不是内部或外部命令"
+### Q: 点了 exe 没有反应 / 一闪就没了
 
-安装 Python 时没有勾选 **Add Python to PATH**。解决方法：
-1. 重新打开 Python 安装器
-2. 选择 **Modify**
-3. 勾选 **Add Python to PATH**
-4. 或者用 `py` 代替 `python` 命令
+通常是因为缺少系统依赖，不影响使用。可以从命令行启动看错误信息：
+1. 打开命令提示符（Win+R → `cmd`）
+2. 拖拽 `DocFormatter.exe` 到命令行窗口
+3. 按回车，看输出的错误信息
 
-### Q: pip install 报错 "Could not find a version"
+### Q: 程序打开但窗口异常
 
-可能是 pip 版本太旧，先升级：
-```bash
-python -m pip install --upgrade pip
-```
-
-### Q: 启动后窗口一闪就没了
-
-在命令行里运行（不要双击 `main.py`），这样能看到错误信息：
-```bash
-python -m docformatter.main
-```
+可能是显示缩放问题。右键 `DocFormatter.exe` → 属性 → 兼容性 → 更改高 DPI 设置 → 勾选"替代高 DPI 缩放行为"。
 
 ### Q: 处理完的文档字体还是不对
 
@@ -358,6 +335,12 @@ python -m docformatter.main
 - 文件正在被 Word 打开（关闭 Word 再试）
 - 文件损坏（用 Word 打开另存为新文件）
 - 图片路径不存在（检查 Markdown 里的图片引用）
+
+### Q: 发给同事怎么用
+
+把整个 `DocFormatter.zip` 发给同事，他解压后双击即可。不需要安装任何东西。
+
+你也可以把做好的模板导出成 `.json`，同时发给他，他导入即可使用同一套模板。
 
 ### Q: 中文字体没找到
 

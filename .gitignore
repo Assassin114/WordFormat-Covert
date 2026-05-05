@@ -19,6 +19,12 @@ Thumbs.db
 # Logs
 *.log
 
+# PyInstaller
+*.spec
+
 # Temp files
 *.tmp
 *.bak
+
+# Project-specific
+skills-lock.json

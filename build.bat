@@ -1,33 +1,35 @@
 @echo off
-REM DocFormatter Windows Build Script
+REM ==========================================
+REM DocFormatter 打包脚本 (Windows)
+REM 执行: build.bat
+REM 输出: dist/DocFormatter/ 文件夹
+REM 发布: 将 dist/DocFormatter/ 打包成 zip
+REM ==========================================
 
-echo Building DocFormatter...
+echo.
+echo === DocFormatter 打包工具 ===
 echo.
 
-REM Check Python
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo Error: Python not found
-    exit /b 1
+REM 检查 PyInstaller
+python -m PyInstaller --version >/dev/null 2>&1
+if %errorlevel% neq 0 (
+    echo [安装 PyInstaller...]
+    pip install pyinstaller
 )
 
-REM Install dependencies
-echo Installing dependencies...
-pip install -r requirements.txt -q
+echo [开始打包...]
+python -m PyInstaller ^
+    --noconfirm ^
+    --name=DocFormatter ^
+    --windowed ^
+    --add-data="docformatter/templates/builtin;docformatter/templates/builtin" ^
+    docformatter/main.py
 
-REM Build with PyInstaller
-echo Building executable...
-pyinstaller build.spec --clean
+echo.
+echo === 打包完成 ===
+echo 输出目录: dist\DocFormatter\
+echo 发布方式: 将 dist\DocFormatter\ 整个文件夹打包成 zip 发给用户
+echo 用户使用: 解压后双击 DocFormatter.exe 即可运行
+echo.
 
-if exist "dist\DocFormatter.exe" (
-    echo.
-    echo Build successful!
-    echo Output: dist\DocFormatter.exe
-    echo.
-    set /p OPEN=Open output folder? (Y/N):
-    if /i "%OPEN%"=="Y" explorer dist
-) else (
-    echo.
-    echo Build failed!
-    exit /b 1
-)
+pause
