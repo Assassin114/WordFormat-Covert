@@ -7,14 +7,15 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QLabel, QFileDialog, QTextEdit, QProgressBar,
-    QListWidget, QGroupBox, QButtonGroup, QRadioButton,
-    QMessageBox,
+    QListWidget, QListWidgetItem, QGroupBox, QButtonGroup,
+    QRadioButton, QComboBox, QMessageBox,
 )
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 
 from ..core.word2md_converter import Word2MDConverter
 from ..core.md2word_converter import MD2WordConverter
 from ..templates.template_io import load_template
+from ..templates.template_manager import TemplateManager
 from ..utils.logger import get_log_emitter, get_logger
 
 logger = get_logger()
@@ -118,12 +119,15 @@ class DocProcessWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.current_state = "A"
-        self.input_files = []
+        self.input_files = []       # 全部文件绝对路径（按添加顺序）
+        self.file_checked = {}       # {path: bool}
         self.template_path = None
         self.output_dir = None
         self.worker = None
+        self.tm = TemplateManager()
 
         self._init_ui()
+        self._refresh_template_combo()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -167,26 +171,32 @@ class DocProcessWidget(QWidget):
         btn_layout.addWidget(self.btn_clear)
 
         btn_layout.addStretch()
+        self.btn_select_all = QPushButton("全选")
+        self.btn_select_all.clicked.connect(self._select_all)
+        btn_layout.addWidget(self.btn_select_all)
+
+        self.btn_deselect_all = QPushButton("取消全选")
+        self.btn_deselect_all.clicked.connect(self._deselect_all)
+        btn_layout.addWidget(self.btn_deselect_all)
         file_layout.addLayout(btn_layout)
 
         self.file_list = QListWidget()
+        self.file_list.itemChanged.connect(self._on_file_item_changed)
         file_layout.addWidget(self.file_list)
         layout.addWidget(file_group)
 
         # ===== 模板选择 =====
         self.template_group = QGroupBox("模板")
-        template_layout = QVBoxLayout(self.template_group)
-
-        tmpl_btn_layout = QHBoxLayout()
-        self.btn_select_template = QPushButton("选择模板文件")
-        self.btn_select_template.clicked.connect(self._select_template)
-        tmpl_btn_layout.addWidget(self.btn_select_template)
-        self.lbl_template = QLabel("未选择模板")
-        self.lbl_template.setWordWrap(True)
-        tmpl_btn_layout.addWidget(self.lbl_template)
-        tmpl_btn_layout.addStretch()
-        template_layout.addLayout(tmpl_btn_layout)
-
+        template_layout = QHBoxLayout(self.template_group)
+        template_layout.addWidget(QLabel("选择模板:"))
+        self.template_combo = QComboBox()
+        self.template_combo.setMinimumWidth(220)
+        self.template_combo.currentIndexChanged.connect(self._on_template_changed)
+        template_layout.addWidget(self.template_combo)
+        self.btn_refresh_tmpl = QPushButton("刷新")
+        self.btn_refresh_tmpl.clicked.connect(self._refresh_template_combo)
+        template_layout.addWidget(self.btn_refresh_tmpl)
+        template_layout.addStretch()
         layout.addWidget(self.template_group)
 
         # ===== 输出目录 =====
@@ -264,6 +274,7 @@ class DocProcessWidget(QWidget):
             for f in files:
                 if f not in self.input_files:
                     self.input_files.append(f)
+                    self.file_checked[f] = True
             self._refresh_file_list()
             self._check_ready()
 
@@ -275,37 +286,86 @@ class DocProcessWidget(QWidget):
             else:
                 ext = "*.docx"
 
-            for f in Path(folder).glob(ext):
+            found = 0
+            for f in Path(folder).rglob(ext):
                 f_str = str(f)
                 if f_str not in self.input_files:
                     self.input_files.append(f_str)
+                    self.file_checked[f_str] = True
+                    found += 1
 
             self._refresh_file_list()
             self._check_ready()
 
-            if not self.input_files:
-                QMessageBox.information(self, "提示", f"文件夹中未找到 {ext} 文件")
+            if found == 0:
+                QMessageBox.information(self, "提示", f"文件夹及其子目录中未找到 {ext} 文件")
 
     def _clear_files(self):
         self.input_files.clear()
+        self.file_checked.clear()
         self.file_list.clear()
         self._check_ready()
 
     def _refresh_file_list(self):
+        """刷新文件列表，保留勾选状态"""
+        self.file_list.blockSignals(True)
         self.file_list.clear()
         for f in self.input_files:
-            self.file_list.addItem(Path(f).name)
+            item = QListWidgetItem(Path(f).name)
+            item.setData(Qt.ItemDataRole.UserRole, f)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if self.file_checked.get(f, True) else Qt.CheckState.Unchecked)
+            self.file_list.addItem(item)
+        self.file_list.blockSignals(False)
+
+    def _on_file_item_changed(self, item):
+        path = item.data(Qt.ItemDataRole.UserRole)
+        if path:
+            self.file_checked[path] = (item.checkState() == Qt.CheckState.Checked)
+            self._check_ready()
+
+    def _select_all(self):
+        self.file_list.blockSignals(True)
+        for i in range(self.file_list.count()):
+            item = self.file_list.item(i)
+            item.setCheckState(Qt.CheckState.Checked)
+            path = item.data(Qt.ItemDataRole.UserRole)
+            if path:
+                self.file_checked[path] = True
+        self.file_list.blockSignals(False)
+        self._check_ready()
+
+    def _deselect_all(self):
+        self.file_list.blockSignals(True)
+        for i in range(self.file_list.count()):
+            item = self.file_list.item(i)
+            item.setCheckState(Qt.CheckState.Unchecked)
+            path = item.data(Qt.ItemDataRole.UserRole)
+            if path:
+                self.file_checked[path] = False
+        self.file_list.blockSignals(False)
+        self._check_ready()
 
     # ==================== 模板/输出 ====================
 
-    def _select_template(self):
-        file, _ = QFileDialog.getOpenFileName(
-            self, "选择模板文件", "", "JSON文件 (*.json);;所有文件 (*.*)"
-        )
-        if file:
-            self.template_path = file
-            self.lbl_template.setText(Path(file).name)
-            self._check_ready()
+    def _refresh_template_combo(self):
+        """刷新模板下拉列表"""
+        self.template_combo.blockSignals(True)
+        self.template_combo.clear()
+        self._templates = self.tm.list_templates()
+        for t in self._templates:
+            suffix = " [内置]" if t["source"] == "builtin" else ""
+            self.template_combo.addItem(f"{t['name']}{suffix}")
+        self.template_combo.blockSignals(False)
+        if self._templates and not self.template_path:
+            self._on_template_changed(0)
+
+    def _on_template_changed(self, index):
+        if index < 0 or index >= len(self._templates):
+            self.template_path = None
+        else:
+            self.template_path = self._templates[index]["path"]
+        self._check_ready()
 
     def _select_output(self):
         folder = QFileDialog.getExistingDirectory(self, "选择输出目录")
@@ -317,7 +377,8 @@ class DocProcessWidget(QWidget):
     # ==================== 就绪检查 ====================
 
     def _check_ready(self):
-        has_files = len(self.input_files) > 0
+        checked = [p for p, c in self.file_checked.items() if c]
+        has_files = len(checked) > 0
         has_output = self.output_dir is not None
         needs_template = self.current_state != "B"
         has_template = self.template_path is not None
@@ -329,10 +390,15 @@ class DocProcessWidget(QWidget):
 
         self.btn_start.setEnabled(ready)
 
+    def _checked_files(self) -> list:
+        """返回勾选的文件路径列表"""
+        return [p for p, c in self.file_checked.items() if c]
+
     # ==================== 处理 ====================
 
     def _start_processing(self):
-        if not self.input_files or not self.output_dir:
+        checked = self._checked_files()
+        if not checked or not self.output_dir:
             return
         if self.current_state != "B" and not self.template_path:
             return
@@ -341,11 +407,11 @@ class DocProcessWidget(QWidget):
         self.btn_cancel.setEnabled(True)
         self.log_text.clear()
         self._append_log(f"开始处理 - 模式: {self.STATE_LABELS[self.current_state]}")
-        self._append_log(f"文件数: {len(self.input_files)}")
+        self._append_log(f"文件数: {len(checked)}")
 
         self.worker = ProcessWorker(
             self.current_state,
-            self.input_files,
+            checked,
             self.output_dir,
             self.template_path
         )

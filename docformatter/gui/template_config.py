@@ -22,6 +22,7 @@ from ..models.template_config import (
     PageNumberPosition, PageNumberAlignment, EquationFormat,
     PrintMode, NumberingMode,
 )
+from ..templates.template_manager import TemplateManager
 from ..utils.placeholder_scanner import scan_placeholders
 
 
@@ -194,6 +195,7 @@ class _FontParagraphGroup(QGroupBox):
         if color.isValid():
             self._current_color = color.name()
             self.color_btn.setStyleSheet(f"background-color: {self._current_color};")
+            self._emit_changed()
 
     def _on_type_changed(self, idx):
         tp = LINE_SPACING_TYPES[idx]
@@ -264,17 +266,17 @@ class _FontParagraphGroup(QGroupBox):
         if idx >= 0:
             self.align.setCurrentIndex(idx)
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         """生成该字体/段落配置的 HTML 预览"""
         f = self.get_font_config()
         p = self.get_paragraph_config()
         align = ALIGNMENT_MAP_REV.get(p.alignment, "左对齐")
         weight = "bold" if f.bold else "normal"
         style = "italic" if f.italic else "normal"
-        indent = f"text-indent: {p.first_line_indent * 16}px;" if p.first_line_indent else ""
+        indent = f"text-indent: {p.first_line_indent * 16 * scale}px;" if p.first_line_indent else ""
         line_h = p.line_spacing if p.line_spacing_type == "multiple" else 1.5
         return f"""<div style="font-family: '{f.cn_name}', '{f.en_name}', serif;
-                    font-size: {f.size}pt; font-weight: {weight}; font-style: {style};
+                    font-size: {f.size * scale:.0f}pt; font-weight: {weight}; font-style: {style};
                     color: {f.color}; text-align: {align};
                     line-height: {line_h}; {indent}">
                     这是一段示例文本，用于预览字体和段落格式效果。<br>
@@ -417,7 +419,7 @@ class _PageConfigPage(QWidget):
         pc.gutter_position = "left" if self.gutter_pos.currentText() == "左" else "top"
         pc.page_number_start = int(self.page_num_start.value())
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         w = self.page_width.value()
         h = self.page_height.value()
         orientation = self.orientation_cb.currentText()
@@ -427,7 +429,7 @@ class _PageConfigPage(QWidget):
         mr = self.margin_right.value()
         gutter = self.gutter.value()
         return (
-            f"<div style='font-size: 10pt; line-height: 1.6;'>"
+            f"<div style='font-size: {10 * scale:.0f}pt; line-height: 1.6;'>"
             f"<b>页面设置预览</b><br>"
             f"纸张: {w:.0f}×{h:.0f}mm {orientation}<br>"
             f"页边距: 上{mt:.0f} 下{mb:.0f} 左{ml:.0f} 右{mr:.0f}mm<br>"
@@ -590,8 +592,8 @@ class _HeaderFooterPage(QWidget):
                 hp.page_number_font = wm["pn_font"].get_font_config()
                 hp.page_number_paragraph = wm["pn_font"].get_paragraph_config()
 
-    def preview_html(self) -> str:
-        lines = ["<div style='font-size: 10pt; line-height: 1.6;'>"]
+    def preview_html(self, scale: float = 1.0) -> str:
+        lines = [f"<div style='font-size: {10 * scale:.0f}pt; line-height: 1.6;'>"]
         lines.append("<b>页眉页脚预览</b><br>")
         for key, label in [("cover", "封面/签署/修改"), ("toc", "目录"), ("body", "正文")]:
             wm = self._hf_widgets[key]
@@ -684,11 +686,11 @@ class _CoverPage(QWidget):
         t.cover.heading_font = self.heading_fp.get_font_config()
         t.cover.heading_paragraph = self.heading_fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         f = self.heading_fp.get_font_config()
         weight = "bold" if f.bold else "normal"
         return (
-            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size}pt;"
+            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size * scale:.0f}pt;"
             f"font-weight: {weight}; color: {f.color};"
             f"text-align: center; padding: 40px 0;'>"
             f"{f.cn_name} {f.size_name}<br>封面标题预览"
@@ -757,12 +759,12 @@ class _SignaturePage(QWidget):
         t.signature.heading_font = self.heading_fp.get_font_config()
         t.signature.heading_paragraph = self.heading_fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         f = self.heading_fp.get_font_config()
         title = self.title_edit.text() or "签署页"
         weight = "bold" if f.bold else "normal"
         return (
-            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size}pt;"
+            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size * scale:.0f}pt;"
             f"font-weight: {weight}; color: {f.color};"
             f"text-align: center; padding: 30px 0;'>"
             f"{title}"
@@ -813,14 +815,14 @@ class _RevisionPage(QWidget):
         t.revision.table_body_font = self.tb_fp.get_font_config()
         t.revision.table_body_paragraph = self.tb_fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         hf = self.heading_fp.get_font_config()
         weight = "bold" if hf.bold else "normal"
         return (
-            f"<div style='font-family: \"{hf.cn_name}\"; font-size: {hf.size}pt;"
+            f"<div style='font-family: \"{hf.cn_name}\"; font-size: {hf.size * scale:.0f}pt;"
             f"font-weight: {weight}; text-align: center;'>"
             f"修改记录<br>"
-            f"<table style='width:100%; border-collapse: collapse; font-size: 10pt; margin-top: 10px;'>"
+            f"<table style='width:100%; border-collapse: collapse; font-size: {10 * scale:.0f}pt; margin-top: 10px;'>"
             f"<tr style='background: #E8E8E8;'><th style='border:1px solid #ccc;padding:4px;'>版本</th>"
             f"<th style='border:1px solid #ccc;padding:4px;'>日期</th><th style='border:1px solid #ccc;padding:4px;'>说明</th></tr>"
             f"<tr><td style='border:1px solid #ccc;padding:4px;'>V1.0</td>"
@@ -877,14 +879,14 @@ class _TOCPage(QWidget):
         t.toc.entry_paragraph = self.entry_fp.get_paragraph_config()
         t.toc.entry_indent = self.entry_indent.value()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         hf = self.heading_fp.get_font_config()
         ef = self.entry_fp.get_font_config()
         return (
             f"<div>"
-            f"<div style='font-family: \"{hf.cn_name}\"; font-size: {hf.size}pt;"
+            f"<div style='font-family: \"{hf.cn_name}\"; font-size: {hf.size * scale:.0f}pt;"
             f"font-weight: bold; text-align: center;'>目 录</div>"
-            f"<div style='font-family: \"{ef.cn_name}\"; font-size: {ef.size}pt; line-height: 1.8;'>"
+            f"<div style='font-family: \"{ef.cn_name}\"; font-size: {ef.size * scale:.0f}pt; line-height: 1.8;'>"
             f"<div>&nbsp;&nbsp;1. 第一章 概述</div>"
             f"<div style='margin-left: {self.entry_indent.value() * 16}px;'>1.1 背景</div>"
             f"<div style='margin-left: {self.entry_indent.value() * 16}px;'>1.2 范围</div>"
@@ -895,6 +897,8 @@ class _TOCPage(QWidget):
 
 class _HeadingTablePage(QWidget):
     """多级列表配置 — 表格展示所有级别 + 编号预览 + 选中行编辑字体段落"""
+
+    changed = pyqtSignal()
 
     # 编号预览辅助
     _STYLE_SEP = {"none": "", "chinese": "、", "decimal": ".", "upper_letter": ".",
@@ -1060,14 +1064,16 @@ class _HeadingTablePage(QWidget):
     def _on_style_changed(self, row, text):
         if 0 <= row < len(self._headings):
             self._headings[row].number_style = NUMBER_STYLE_MAP.get(text, "none")
-            self._refresh_preview_column(row)  # 该行及以下都受影响
+            self._refresh_preview_column(row)
             self._select_row(row)
+            self.changed.emit()
 
     def _on_multi_changed(self, row, checked):
         if 0 <= row < len(self._headings):
             self._headings[row].number_multi = checked
             self._refresh_preview_column(row)
             self._select_row(row)
+            self.changed.emit()
 
     # ── 模板 I/O ──
 
@@ -1089,7 +1095,7 @@ class _HeadingTablePage(QWidget):
 
     # ── 预览 ──
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         parts = ["<div style='line-height: 1.8;'>"]
         for h in self._headings:
             f = h.font
@@ -1097,7 +1103,7 @@ class _HeadingTablePage(QWidget):
             num = self._build_number_preview(h.level - 1)
             prefix = f"{num} " if num and num != "(无)" else ""
             parts.append(
-                f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size}pt;"
+                f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size * scale:.0f}pt;"
                 f"font-weight: {weight}; color: {f.color};"
                 f"padding: 4px 0;'>"
                 f"{prefix}标题{h.level} 示例文本"
@@ -1125,7 +1131,7 @@ class _BodyPage(QWidget):
         t.body.font = self.fp.get_font_config()
         t.body.paragraph = self.fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         return self.fp.preview_html()
 
 
@@ -1188,20 +1194,20 @@ class _TablePage(QWidget):
         ts.body_font = self.body_fp.get_font_config()
         ts.body_paragraph = self.body_fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         hf = self.header_fp.get_font_config()
         bf = self.body_fp.get_font_config()
         return (
             f"<table style='width:100%; border-collapse: collapse;'>"
             f"<tr style='background: {self._current_bg};'>"
             f"<th style='border:1px solid #aaa;padding:4px;font-family:\"{hf.cn_name}\";"
-            f"font-size:{hf.size}pt;font-weight:bold;'>列A</th>"
+            f"font-size:{hf.size * scale:.0f}pt;font-weight:bold;'>列A</th>"
             f"<th style='border:1px solid #aaa;padding:4px;font-family:\"{hf.cn_name}\";"
-            f"font-size:{hf.size}pt;font-weight:bold;'>列B</th></tr>"
+            f"font-size:{hf.size * scale:.0f}pt;font-weight:bold;'>列B</th></tr>"
             f"<tr><td style='border:1px solid #aaa;padding:4px;font-family:\"{bf.cn_name}\";"
-            f"font-size:{bf.size}pt;'>值1</td>"
+            f"font-size:{bf.size * scale:.0f}pt;'>值1</td>"
             f"<td style='border:1px solid #aaa;padding:4px;font-family:\"{bf.cn_name}\";"
-            f"font-size:{bf.size}pt;'>值2</td></tr>"
+            f"font-size:{bf.size * scale:.0f}pt;'>值2</td></tr>"
             f"</table>"
         )
 
@@ -1280,10 +1286,10 @@ class _CaptionPage(QWidget):
         t.caption.font = self.cap_fp.get_font_config()
         t.caption.paragraph = self.cap_fp.get_paragraph_config()
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         f = self.cap_fp.get_font_config()
         return (
-            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size}pt;"
+            f"<div style='font-family: \"{f.cn_name}\"; font-size: {f.size * scale:.0f}pt;"
             f"text-align: center; padding: 8px;'>"
             f"{self.fig_prefix.text()} 1 示例题注 &nbsp;|&nbsp; "
             f"{self.tbl_prefix.text()} 1 示例表注 &nbsp;|&nbsp; "
@@ -1328,10 +1334,10 @@ class _CodeBlockPage(QWidget):
         t.code_block.paragraph = self.fp.get_paragraph_config()
         t.code_block.bg_color = self._current_bg
 
-    def preview_html(self) -> str:
+    def preview_html(self, scale: float = 1.0) -> str:
         f = self.fp.get_font_config()
         return (
-            f"<pre style='font-family: \"{f.en_name}\", monospace; font-size: {f.size}pt;"
+            f"<pre style='font-family: \"{f.en_name}\", monospace; font-size: {f.size * scale:.0f}pt;"
             f"background: {self._current_bg}; padding: 12px; border-radius: 4px;'>"
             f"def hello():<br>    print(\"Hello World\")"
             f"</pre>"
@@ -1343,10 +1349,9 @@ class _CodeBlockPage(QWidget):
 # ══════════════════════════════════════════════════════════════
 
 class _PreviewPanel(QFrame):
-    """独立预览面板 — 固定 A4 宽高比 (1:√2 ≈ 1:1.414) HTML 渲染"""
+    """独立预览面板 — 根据页面设置动态调整比例和字体缩放"""
 
     PREVIEW_WIDTH = 200
-    PREVIEW_HEIGHT = int(PREVIEW_WIDTH * 1.414)  # ≈ 283
 
     def __init__(self):
         super().__init__()
@@ -1354,13 +1359,13 @@ class _PreviewPanel(QFrame):
         self.setMaximumWidth(self.PREVIEW_WIDTH + 40)
         layout = QVBoxLayout(self)
 
-        title = QLabel("<b>风格预览</b> (A4)")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
+        self._title = QLabel("<b>风格预览</b> (A4)")
+        self._title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._title)
 
         self.preview_area = QTextEdit()
         self.preview_area.setReadOnly(True)
-        self.preview_area.setFixedSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT)
+        self.preview_area.setFixedWidth(self.PREVIEW_WIDTH)
         self.preview_area.setStyleSheet(
             "QTextEdit { background: white; border: 1px solid #aaa; padding: 12px; }"
         )
@@ -1372,8 +1377,32 @@ class _PreviewPanel(QFrame):
         layout.addWidget(hint)
         layout.addStretch()
 
+        self._scale = 1.0
+        self.set_page_size(210, 297)  # 默认 A4
+
+    def set_page_size(self, width_mm: float, height_mm: float):
+        """根据页面尺寸调整预览区域宽高比"""
+        is_landscape = width_mm > height_mm
+        pw = float(width_mm) if not is_landscape else float(height_mm)
+        ph = float(height_mm) if not is_landscape else float(width_mm)
+        ratio = ph / pw
+        panel_h = max(60, int(self.PREVIEW_WIDTH * ratio))
+        self.preview_area.setFixedHeight(panel_h)
+
+        paper_names = {210: "A4", 297: "A3", 148: "A5", 176: "B5", 215.9: "Letter", 215.9: "Legal"}
+        w_key = round(width_mm, 1)
+        name = paper_names.get(w_key, f"{width_mm:.0f}×{height_mm:.0f}")
+        orient = "横向" if is_landscape else "纵向"
+        self._title.setText(f"<b>风格预览</b> ({name} {orient})")
+
+        self._scale = self.PREVIEW_WIDTH / max(width_mm, height_mm) if is_landscape else self.PREVIEW_WIDTH / width_mm
+
     def show_preview(self, html: str):
         self.preview_area.setHtml(html)
+
+    @property
+    def scale(self) -> float:
+        return self._scale
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1402,10 +1431,12 @@ class TemplateConfigWidget(QWidget):
         super().__init__()
         self.template = create_default_template()
         self.template_path = None
+        self.tm = TemplateManager()
         self._current_item_id = None
         self._pages = {}
         self._init_ui()
         self._connect_signals()
+        self._refresh_template_combo()
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -1413,13 +1444,56 @@ class TemplateConfigWidget(QWidget):
         # ── 顶部工具栏 ──
         toolbar = QHBoxLayout()
         self.button_new = QPushButton("新建模板")
-        self.button_load = QPushButton("加载模板")
-        self.button_save = QPushButton("保存模板")
-        for btn in [self.button_new, self.button_load, self.button_save]:
-            btn.setMinimumHeight(32)
-            toolbar.addWidget(btn)
+        self.button_new.setMinimumHeight(32)
+        toolbar.addWidget(self.button_new)
+
+        toolbar.addWidget(QLabel(" 模板:"))
+        self.template_combo = QComboBox()
+        self.template_combo.setMinimumWidth(180)
+        self.template_combo.currentIndexChanged.connect(self._on_template_select)
+        toolbar.addWidget(self.template_combo)
+
+        self.button_save = QPushButton("保存")
+        self.button_save.setMinimumHeight(32)
+        toolbar.addWidget(self.button_save)
+
+        self.button_save_as = QPushButton("另存为")
+        self.button_save_as.setMinimumHeight(32)
+        toolbar.addWidget(self.button_save_as)
+
+        self.button_export = QPushButton("导出")
+        self.button_export.setMinimumHeight(32)
+        toolbar.addWidget(self.button_export)
+
+        self.button_import = QPushButton("导入")
+        self.button_import.setMinimumHeight(32)
+        toolbar.addWidget(self.button_import)
+
         toolbar.addStretch()
         main_layout.addLayout(toolbar)
+
+        # ── 元信息 ──
+        meta_bar = QHBoxLayout()
+        meta_bar.addWidget(QLabel("名称:"))
+        self.meta_name = QLineEdit()
+        self.meta_name.setPlaceholderText("模板名称")
+        self.meta_name.setMaximumWidth(150)
+        meta_bar.addWidget(self.meta_name)
+
+        meta_bar.addWidget(QLabel("标签:"))
+        self.meta_tags = QLineEdit()
+        self.meta_tags.setPlaceholderText("逗号分隔")
+        self.meta_tags.setMaximumWidth(150)
+        meta_bar.addWidget(self.meta_tags)
+
+        meta_bar.addWidget(QLabel("来源文档:"))
+        self.meta_docs = QLineEdit()
+        self.meta_docs.setPlaceholderText("逗号分隔")
+        self.meta_docs.setMaximumWidth(180)
+        meta_bar.addWidget(self.meta_docs)
+
+        meta_bar.addStretch()
+        main_layout.addLayout(meta_bar)
 
         # ── 左 / 中 / 右 三栏 ──
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -1461,8 +1535,10 @@ class TemplateConfigWidget(QWidget):
     def _connect_signals(self):
         self.config_list.currentRowChanged.connect(self._on_item_changed)
         self.button_new.clicked.connect(self.new_template)
-        self.button_load.clicked.connect(self.load_template)
         self.button_save.clicked.connect(self.save_template)
+        self.button_save_as.clicked.connect(self._save_as)
+        self.button_export.clicked.connect(self._export_template)
+        self.button_import.clicked.connect(self._import_template)
         # 手动触发初始页加载
         initial_row = self.config_list.currentRow()
         if initial_row >= 0:
@@ -1532,6 +1608,8 @@ class TemplateConfigWidget(QWidget):
         elif page_id == "heading":
             page.table.itemSelectionChanged.connect(self._update_preview)
             self._preview_conns.append((page.table.itemSelectionChanged, self._update_preview))
+            page.changed.connect(self._update_preview)
+            self._preview_conns.append((page.changed, self._update_preview))
         elif page_id == "table":
             for rb in page.table_type_group.buttons():
                 self._connect_widget(rb)
@@ -1566,7 +1644,10 @@ class TemplateConfigWidget(QWidget):
         if self._current_item_id and self._current_item_id in self._pages:
             page = self._pages[self._current_item_id]
             if hasattr(page, 'preview_html'):
-                self.preview.show_preview(page.preview_html())
+                page.save_config(self.template)
+                self.preview.set_page_size(self.template.page.width, self.template.page.height)
+                html = page.preview_html(scale=self.preview.scale)
+                self.preview.show_preview(html)
 
     def _load_all_pages(self):
         for page in self._pages.values():
@@ -1577,36 +1658,127 @@ class TemplateConfigWidget(QWidget):
             self._reconnect_preview(page)
             self._update_preview()
 
+    # ── 模板管理 ──
+
+    def _refresh_template_combo(self):
+        """刷新模板下拉列表"""
+        self.template_combo.blockSignals(True)
+        self.template_combo.clear()
+        self._templates = self.tm.list_templates()
+        matched = -1
+        for i, t in enumerate(self._templates):
+            suffix = " [内置]" if t["source"] == "builtin" else ""
+            self.template_combo.addItem(f"{t['name']}{suffix}")
+            if self.template_path and t["path"] == self.template_path:
+                matched = i
+        self.template_combo.blockSignals(False)
+        if matched >= 0:
+            self.template_combo.setCurrentIndex(matched)
+        elif self._templates and self.template_path is None:
+            self.template_combo.setCurrentIndex(0)
+            self._on_template_select(0)
+
+    def _on_template_select(self, index):
+        if index < 0 or index >= len(self._templates):
+            return
+        t = self._templates[index]
+        try:
+            self.template = self.tm.load_template(t["path"])
+            self.template_path = t["path"]
+            self._load_all_pages()
+            self._load_meta_into_ui(t["meta"])
+        except Exception as e:
+            QMessageBox.warning(self, "失败", f"加载模板失败:\n{str(e)}")
+
+    def _load_meta_into_ui(self, meta: dict):
+        self.meta_name.setText(meta.get("name", ""))
+        self.meta_tags.setText(", ".join(meta.get("tags", [])))
+        self.meta_docs.setText(", ".join(meta.get("source_docs", [])))
+
+    def _collect_meta(self) -> dict:
+        from ..templates.template_manager import read_meta
+        meta = {}
+        if self.template_path:
+            try:
+                meta = read_meta(self.template_path)
+            except Exception:
+                pass
+        meta["name"] = self.meta_name.text() or "未命名模板"
+        meta["tags"] = [t.strip() for t in self.meta_tags.text().split(",") if t.strip()]
+        meta["source_docs"] = [d.strip() for d in self.meta_docs.text().split(",") if d.strip()]
+        return meta
+
     def new_template(self):
         self.template = create_default_template()
         self.template_path = None
+        self._templates = []
+        self.template_combo.blockSignals(True)
+        self.template_combo.clear()
+        self.template_combo.blockSignals(False)
+        self.meta_name.clear()
+        self.meta_tags.clear()
+        self.meta_docs.clear()
         self._load_all_pages()
-
-    def load_template(self):
-        file, _ = QFileDialog.getOpenFileName(self, "加载模板", "", "JSON文件 (*.json)")
-        if file:
-            try:
-                from ..templates.template_io import load_template as io_load
-                self.template = io_load(file)
-                self.template_path = file
-                self._load_all_pages()
-                QMessageBox.information(self, "成功", f"已加载:\n{file}")
-            except Exception as e:
-                QMessageBox.warning(self, "失败", f"加载失败:\n{str(e)}")
 
     def save_template(self):
         if self._current_item_id and self._current_item_id in self._pages:
             self._pages[self._current_item_id].save_config(self.template)
 
-        file, _ = QFileDialog.getSaveFileName(self, "保存模板", self.template_path or "template.json", "JSON文件 (*.json)")
-        if file:
+        if self.template_path and Path(self.template_path).parent == self.tm.user_dir:
             try:
-                from ..templates.template_io import save_template as io_save
-                io_save(self.template, file)
-                self.template_path = file
-                QMessageBox.information(self, "成功", f"已保存:\n{file}")
+                self.tm.save(self.template, self.template_path)
+                QMessageBox.information(self, "成功", f"已保存:\n{self.template_path}")
+                self._refresh_template_combo()
             except Exception as e:
                 QMessageBox.warning(self, "失败", f"保存失败:\n{str(e)}")
+        else:
+            self._save_as()
+
+    def _save_as(self):
+        if self._current_item_id and self._current_item_id in self._pages:
+            self._pages[self._current_item_id].save_config(self.template)
+
+        name = self.meta_name.text() or "新模板"
+        meta = self._collect_meta()
+        try:
+            path = self.tm.save_as(self.template, name, meta)
+            self.template_path = path
+            self._refresh_template_combo()
+            QMessageBox.information(self, "成功", f"已保存:\n{path}")
+        except Exception as e:
+            QMessageBox.warning(self, "失败", f"保存失败:\n{str(e)}")
+
+    def _export_template(self):
+        if not self.template_path:
+            QMessageBox.warning(self, "提示", "请先保存或加载一个模板")
+            return
+        file, _ = QFileDialog.getSaveFileName(
+            self, "导出模板", f"{self.meta_name.text() or 'template'}.json", "JSON文件 (*.json)"
+        )
+        if file:
+            try:
+                if self._current_item_id and self._current_item_id in self._pages:
+                    self._pages[self._current_item_id].save_config(self.template)
+                self.tm.export_template(self.template_path, file)
+                QMessageBox.information(self, "成功", f"已导出:\n{file}")
+            except Exception as e:
+                QMessageBox.warning(self, "失败", f"导出失败:\n{str(e)}")
+
+    def _import_template(self):
+        file, _ = QFileDialog.getOpenFileName(self, "导入模板", "", "JSON文件 (*.json)")
+        if file:
+            try:
+                path = self.tm.import_template(file)
+                if path:
+                    self.template = self.tm.load_template(path)
+                    self.template_path = path
+                    self._load_all_pages()
+                    self._refresh_template_combo()
+                    from ..templates.template_manager import read_meta
+                    self._load_meta_into_ui(read_meta(path))
+                    QMessageBox.information(self, "成功", f"已导入:\n{path}")
+            except Exception as e:
+                QMessageBox.warning(self, "失败", f"导入失败:\n{str(e)}")
 
     def get_template(self) -> TemplateConfig:
         if self._current_item_id and self._current_item_id in self._pages:

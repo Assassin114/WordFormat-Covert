@@ -102,10 +102,10 @@ class MainWindow(QMainWindow):
             current_widget.new_template()
     
     def _on_open_template(self):
-        """打开模板"""
+        """打开/导入模板"""
         current_widget = self.tab_widget.currentWidget()
-        if hasattr(current_widget, 'load_template'):
-            current_widget.load_template()
+        if hasattr(current_widget, '_import_template'):
+            current_widget._import_template()
     
     def _on_save_template(self):
         """保存模板"""
