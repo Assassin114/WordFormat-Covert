@@ -1,0 +1,542 @@
+{
+  "version": "1.0",
+  "print_mode": "single",
+  "equation_format": "keep",
+  "page": {
+    "width": 210.0,
+    "height": 297.0,
+    "orientation": "portrait",
+    "margin_top": 37.0,
+    "margin_bottom": 35.0,
+    "margin_left": 28.0,
+    "margin_right": 26.0,
+    "gutter": 0,
+    "gutter_position": "left",
+    "page_number_start": 1
+  },
+  "cover": {
+    "enabled": true,
+    "template_path": null,
+    "fields": {},
+    "heading_font": {
+      "cn_name": "黑体",
+      "en_name": "Times New Roman",
+      "size": 42,
+      "size_name": "初号",
+      "bold": true,
+      "italic": false,
+      "color": "#000000"
+    },
+    "heading_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    }
+  },
+  "signature": {
+    "enabled": true,
+    "template_path": null,
+    "title": "签署页",
+    "heading_font": {
+      "cn_name": "黑体",
+      "en_name": "Times New Roman",
+      "size": 26,
+      "size_name": "一号",
+      "bold": true,
+      "italic": false,
+      "color": "#000000"
+    },
+    "heading_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    }
+  },
+  "revision": {
+    "enabled": true,
+    "heading_font": {
+      "cn_name": "黑体",
+      "en_name": "Times New Roman",
+      "size": 16,
+      "size_name": "三号",
+      "bold": true,
+      "italic": false,
+      "color": "#000000"
+    },
+    "heading_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    },
+    "table_header_font": {
+      "cn_name": "宋体",
+      "en_name": "Times New Roman",
+      "size": 10.5,
+      "size_name": "五号",
+      "bold": true,
+      "italic": false,
+      "color": "#000000"
+    },
+    "table_header_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    },
+    "table_body_font": {
+      "cn_name": "宋体",
+      "en_name": "Times New Roman",
+      "size": 10.5,
+      "size_name": "五号",
+      "bold": false,
+      "italic": false,
+      "color": "#000000"
+    },
+    "table_body_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    }
+  },
+  "toc": {
+    "enabled": true,
+    "heading_font": {
+      "cn_name": "黑体",
+      "en_name": "Times New Roman",
+      "size": 16,
+      "size_name": "三号",
+      "bold": true,
+      "italic": false,
+      "color": "#000000"
+    },
+    "heading_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    },
+    "entry_font": {
+      "cn_name": "宋体",
+      "en_name": "Times New Roman",
+      "size": 12,
+      "size_name": "小四",
+      "bold": false,
+      "italic": false,
+      "color": "#000000"
+    },
+    "entry_paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "left"
+    },
+    "entry_indent": 0
+  },
+  "headings": [
+    {
+      "level": 1,
+      "number_style": "chinese",
+      "number_multi": true,
+      "font": {
+        "cn_name": "黑体",
+        "en_name": "Times New Roman",
+        "size": 26.0,
+        "size_name": "五号",
+        "bold": true,
+        "italic": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "line_spacing": 2.0,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 24.0,
+        "space_after": 6.0,
+        "first_line_indent": 0,
+        "alignment": "left"
+      }
+    },
+    {
+      "level": 2,
+      "number_style": "decimal",
+      "number_multi": true,
+      "font": {
+        "cn_name": "黑体",
+        "en_name": "Times New Roman",
+        "size": 22.0,
+        "size_name": "五号",
+        "bold": true,
+        "italic": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 12.0,
+        "space_after": 6.0,
+        "first_line_indent": 0,
+        "alignment": "left"
+      }
+    },
+    {
+      "level": 3,
+      "number_style": "decimal",
+      "number_multi": true,
+      "font": {
+        "cn_name": "楷体",
+        "en_name": "Times New Roman",
+        "size": 16.0,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 12.0,
+        "space_after": 6.0,
+        "first_line_indent": 0,
+        "alignment": "left"
+      }
+    },
+    {
+      "level": 4,
+      "number_style": "decimal",
+      "number_multi": false,
+      "font": {
+        "cn_name": "楷体",
+        "en_name": "Times New Roman",
+        "size": 14.0,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 6.0,
+        "space_after": 6.0,
+        "first_line_indent": 0,
+        "alignment": "left"
+      }
+    },
+    {
+      "level": 5,
+      "number_style": "none",
+      "number_multi": false,
+      "font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 6.0,
+        "space_after": 6.0,
+        "first_line_indent": 0,
+        "alignment": "left"
+      }
+    }
+  ],
+  "body": {
+    "font": {
+      "cn_name": "宋体",
+      "en_name": "Times New Roman",
+      "size": 10.5,
+      "size_name": "五号",
+      "bold": false,
+      "italic": false,
+      "color": "#000000"
+    },
+    "paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 21.0,
+      "alignment": "left"
+    }
+  },
+  "table_font": {
+    "regular_table": {
+      "header_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": true,
+        "italic": false,
+        "color": "#000000"
+      },
+      "header_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      },
+      "header_bg_color": "E8E8E8",
+      "body_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "body_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      }
+    },
+    "record_table": {
+      "header_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": true,
+        "italic": false,
+        "color": "#000000"
+      },
+      "header_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      },
+      "header_bg_color": "E8E8E8",
+      "body_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "body_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      }
+    }
+  },
+  "caption": {
+    "figure_prefix": "图",
+    "table_prefix": "表",
+    "equation_prefix": "公式",
+    "position_figure": "below",
+    "position_table": "above",
+    "numbering_mode": "global",
+    "font": {
+      "cn_name": "宋体",
+      "en_name": "Times New Roman",
+      "size": 10.5,
+      "size_name": "五号",
+      "bold": false,
+      "italic": false,
+      "color": "#000000"
+    },
+    "paragraph": {
+      "line_spacing": 1.5,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "center"
+    }
+  },
+  "code_block": {
+    "font": {
+      "cn_name": "Consolas",
+      "en_name": "Consolas",
+      "size": 10.5,
+      "size_name": "五号",
+      "bold": false,
+      "italic": false,
+      "color": "#000000"
+    },
+    "paragraph": {
+      "line_spacing": 1.0,
+      "line_spacing_type": "multiple",
+      "line_spacing_fixed": 20,
+      "line_spacing_min": 15,
+      "space_before": 0,
+      "space_after": 0,
+      "first_line_indent": 0,
+      "alignment": "left"
+    },
+    "bg_color": "#F0F0F0"
+  },
+  "header_footer": {
+    "cover_page": {
+      "header_text": "",
+      "show_header": true,
+      "show_footer": false,
+      "show_page_number": false,
+      "page_number_format": "roman_up",
+      "page_number_position": "footer",
+      "page_number_alignment": "center",
+      "page_number_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "page_number_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      }
+    },
+    "toc_page": {
+      "header_text": "目录",
+      "show_header": true,
+      "show_footer": true,
+      "show_page_number": true,
+      "page_number_format": "roman_up",
+      "page_number_position": "footer",
+      "page_number_alignment": "center",
+      "page_number_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "page_number_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      }
+    },
+    "body_page": {
+      "header_text": "正文",
+      "show_header": true,
+      "show_footer": true,
+      "show_page_number": true,
+      "page_number_format": "roman_up",
+      "page_number_position": "footer",
+      "page_number_alignment": "center",
+      "page_number_font": {
+        "cn_name": "宋体",
+        "en_name": "Times New Roman",
+        "size": 10.5,
+        "size_name": "五号",
+        "bold": false,
+        "italic": false,
+        "color": "#000000"
+      },
+      "page_number_paragraph": {
+        "line_spacing": 1.5,
+        "line_spacing_type": "multiple",
+        "line_spacing_fixed": 20,
+        "line_spacing_min": 15,
+        "space_before": 0,
+        "space_after": 0,
+        "first_line_indent": 0,
+        "alignment": "center"
+      }
+    },
+    "different_first_page": false,
+    "different_odd_even": false
+  },
+  "_meta": {
+    "name": "默认模板",
+    "created": "2026-05-05",
+    "modified": "2026-05-05",
+    "source_docs": [],
+    "tags": [
+      "默认"
+    ],
+    "notes": "系统内置默认模板",
+    "builtin": true
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "doc_type": "研究报告",
+  "cover": {
+    "contract_no": "合同编号：{{contract_no}}",
+    "classification": "密级★{{classification}}",
+    "year": "{{year}}年",
+    "organization": "{{organization}}",
+    "date": "二〇二X年XX月",
+    "sign_page_title": "签  署  页",
+    "drafter": "拟  制：",
+    "drafter_time": "时间：",
+    "reviewer": "校  对：",
+    "reviewer_time": "时间：",
+    "approver": "标  审：",
+    "approver_time": "时间：",
+    "checker": "审  核：",
+    "checker_time": "时间：",
+    "final_approver": "批  准：",
+    "final_approver_time": "时间："
+  },
+  "table_templates": {
+    "modification_record": {
+      "type": "regular",
+      "header_style": 51,
+      "columns": ["序号", "版本号", "日期", "修改条款", "作者/修改者"]
+    },
+    "test_record": {
+      "type": "test_record",
+      "sections": ["基本信息", "测试过程", "测试结论", "测试人员", "操作人员", "测试时间"],
+      "columns": ["序号", "操作步骤", "预期结果", "实测结果", "是否通过"]
+    },
+    "trial_record": {
+      "type": "trial_record", 
+      "sections": ["试验科目名称", "试验目的", "前提条件", "试验流程", "试验结论", "试验人员", "完成时间"],
+      "columns": ["序号", "操作步骤", "预期结果", "实测结果"]
+    }
+  }
+}

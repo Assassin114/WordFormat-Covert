@@ -1,0 +1,89 @@
+{
+  "_comment": "表格字段映射模板 - 用于文档格式化系统",
+  "version": "1.0",
+  "tables": {
+    "常规表格": {
+      "description": "标准行列表格，有规律的结构",
+      "header_style": {
+        "bold": true,
+        "align": "center",
+        "font": "宋体",
+        "size": 24
+      },
+      "body_style": {
+        "align_rule": "text_length",
+        "short_text_align": "center",
+        "long_text_align": "left",
+        "threshold_chars": 10,
+        "font": "宋体",
+        "size": 24
+      }
+    },
+    "测试记录表": {
+      "description": "测试记录表，键值对形式",
+      "section_header": {
+        "fields": ["基本信息", "测试过程", "测试结论"],
+        "bold": true,
+        "align": "center"
+      },
+      "field_name": {
+        "fields": ["测试用例名称", "用例测试用例标识", "测试内容", "测试方法", "前提和约束", "终止条件"],
+        "bold": true,
+        "align": "left",
+        "font": "宋体",
+        "size": 24
+      },
+      "field_value": {
+        "bold": false,
+        "align": "left",
+        "font": "宋体",
+        "size": 24
+      },
+      "column_header": {
+        "fields": ["序号", "操作步骤", "预期结果", "实测结果", "是否通过"],
+        "bold": true,
+        "align": "center",
+        "font": "宋体",
+        "size": 24
+      },
+      "data_row": {
+        "align": "left",
+        "bold": false,
+        "font": "宋体",
+        "size": 24
+      },
+      "signature_row": {
+        "fields": ["测试人员", "操作人员", "测试时间"],
+        "name_bold": true,
+        "name_align": "center",
+        "value_bold": false,
+        "value_align": "left"
+      }
+    },
+    "试验记录表": {
+      "description": "试验记录表，与测试记录表结构类似",
+      "section_header": {
+        "fields": ["试验科目名称", "试验目的", "前提条件", "试验流程", "试验结论"],
+        "bold": true,
+        "align": "center"
+      },
+      "field_name": {
+        "fields": ["试验标识"],
+        "bold": true,
+        "align": "left"
+      },
+      "column_header": {
+        "fields": ["序号", "操作步骤", "预期结果", "实测结果"],
+        "bold": true,
+        "align": "center"
+      },
+      "signature_row": {
+        "fields": ["试验人员", "完成时间"],
+        "name_bold": true,
+        "name_align": "center",
+        "value_bold": false,
+        "value_align": "left"
+      }
+    }
+  }
+}
