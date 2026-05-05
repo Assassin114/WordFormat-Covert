@@ -1,223 +1,397 @@
-# DocFormatter — Word 文档格式批量处理工具
+# DocFormatter — Word 文档格式整理工具
 
-基于 Python + PyQt6 的两段式架构：**混乱 Word → Markdown → 格式化 Word**。
+一个把混乱的 Word 文档自动整理成规范格式的工具。
 
-## 架构
+**比如你有 10 个格式不统一的 Word 文档**，字体大小不一、标题没加粗、表格颜色乱七八糟。这个工具可以一键全部整理好——字体统一、标题分级、表格美观、图表自动编号。
 
-```
-输入 → Word2MD ① → MD 中间态 → MD2Word ② → 输出
-         (可审核、可版本管理)
-```
+---
 
-## 安装
+## 目录
+
+- [我能用它做什么](#我能用它做什么)
+- [安装 Python 环境](#安装-python-环境)
+- [安装本项目](#安装本项目)
+- [启动程序](#启动程序)
+- [操作指南](#操作指南)
+  - [第一部分：制作模板](#第一部分制作模板)
+  - [第二部分：处理文档](#第二部分处理文档)
+  - [模板怎么共享](#模板怎么共享)
+- [写 Markdown 来生成 Word](#写-markdown-来生成-word)
+- [常见问题](#常见问题)
+
+---
+
+## 我能用它做什么
+
+| 你想做什么 | 步骤 |
+|-----------|------|
+| 把一堆格式混乱的 Word 统一整理 | 选一个模板 → 添加文件 → 点开始 |
+| 把 Word 文档转成 Markdown 文本 | 切换到模式 B → 添加文件 → 开始 |
+| 手写 Markdown，转成漂亮的 Word | 切换到模式 C → 选模板 → 添加 .md 文件 → 开始 |
+| 批量调整标题/正文/表格的字体段落 | 在模板里改好配置 → 用这个模板处理文档 |
+| 给文档加封面、签署页、目录 | 在模板里开启并配置 |
+| 给图表自动编号（图 1、表 2…） | 模板里开启题注功能 |
+
+---
+
+## 安装 Python 环境
+
+### Windows
+
+1. 打开 [python.org](https://python.org/downloads/)
+2. 下载最新的 Python（3.10 或以上）
+3. 安装时 **务必勾选 "Add Python to PATH"**（底部复选框）
+4. 安装完成后，按 `Win + R`，输入 `cmd`，回车，打开命令提示符
+5. 输入 `python --version`，看到类似 `Python 3.12.x` 就说明装好了
+
+### macOS
+
+1. 打开 [python.org](https://python.org/downloads/) 下载安装器
+2. 或者打开终端，输入 `brew install python3`
+
+### Linux（Ubuntu/Debian）
 
 ```bash
-cd docformatter
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+```
+
+---
+
+## 安装本项目
+
+### 1. 下载代码
+
+你的同事把代码放在了 GitHub 上。请他从仓库页面点击绿色的 **Code** 按钮 → **Download ZIP**，解压到你喜欢的文件夹（比如桌面）。
+
+### 2. 安装依赖
+
+打开终端/命令提示符，进入项目目录：
+
+```bash
+cd WordFormat-Covert/docformatter
 pip install -r requirements.txt
 ```
 
-## 启动
+等待几分钟，看到 `Successfully installed` 就完成了。
+
+> 如果 `pip` 报 "command not found"，换成 `pip3` 试试。
+
+---
+
+## 启动程序
+
+在项目根目录（`WordFormat-Covert/`）下执行：
 
 ```bash
 python -m docformatter.main
 ```
 
-## 界面 (2 个 Tab)
+稍等几秒，会出现一个带菜单栏的窗口，窗口标题是 **DocFormatter - 2.0.0**。
 
-| Tab | 功能 |
-|-----|------|
-| 模板编辑 | 左侧选择项目，右侧配置字体/段落/页面设置 |
-| 文档处理 | 3 种模式处理文档 |
+---
 
-### 文档处理 — 3 种模式
+## 操作指南
 
-| 模式 | 输入 | 模板 | 输出 | 流程 |
-|------|------|------|------|------|
-| A: Word 格式整理 | .docx | 需要 | .docx | Word→MD→Word 两段式 |
-| B: Word→MD | .docx | 不需要 | .md | 仅提取 Markdown |
-| C: MD→Word | .md | 需要 | .docx | 从 MD 生成格式化 Word |
+程序界面分为 **两个 Tab 页**，顶部有标签可以切换：
 
-## 模板配置项
+| Tab 名 | 用途 |
+|---------|------|
+| **模板编辑** | 设计文档的"格式模板"——规定字体大小、标题样式、页面边距等 |
+| **文档处理** | 用做好的模板，把实际的 Word 文档批量整理好 |
 
-| 分类 | 项目 | 说明 |
-|------|------|------|
-| 页面设置 | 纸张大小/方向、页边距、装订线、起始页码 | 对应 Word 页面布局 |
-| 封面 | 模板文件 + 占位符映射 + 字体/段落 | {{contract_no}} 等 |
-| 签署页 | 模板文件 + 标题 + 字体/段落 | 拟制/校对/标审/审核/批准 |
-| 修改记录页 | 表格表头/正文字体段落 | 版本修订记录 |
-| 目录页 | 标题/条目字体段落 + 缩进 | 自动生成 TOC 域 |
-| 标题1-5 | 字体 + 段落（行距/段前段后/对齐） | 五级标题格式 |
-| 正文 | 字体 + 段落（含首行缩进） | 中文国标默认值 |
-| 表格 | 基础表/记录表（表头/正文字体段落） | 含背景色 |
-| 题注 | 图序/表序/公式序前缀 + 编号格式 | 图/表/公式自动编号 |
-| 代码块 | 等宽字体 + 背景色 | 代码段落格式 |
-| 页眉页脚 | 封面/目录/正文三类 + 页码格式 | 大写罗马/阿拉伯数字 |
+整体思路是：**先做好一个模板（规定格式），然后用这个模板去整理文档。**
 
-## Markdown 格式规范
+---
 
-### L1 基础（标准 Markdown，用户手写 MD 的最低要求）
+### 第一部分：制作模板
+
+切换到 **模板编辑** Tab。界面上有三栏：
+
+```
+┌──────────┬──────────────────────┬──────────┐
+│ 配置列表  │     编辑区域          │  预览面板  │
+│          │                      │          │
+│ 页面设置  │ （选中"页面设置"      │   ┌───┐  │
+│ 页眉页脚  │   后出现在这里）      │   │预 │  │
+│ 封面     │                      │   │览 │  │
+│ 签署页    │                      │   │图 │  │
+│ ...      │                      │   └───┘  │
+│ 代码块    │                      │          │
+└──────────┴──────────────────────┴──────────┘
+```
+
+- **左侧**：配置项目列表，点哪个，中间就出现对应的编辑表单
+- **中间**：具体的配置项（字体、字号、间距…），改完自动在右侧看到效果
+- **右侧**：实时预览你当前配置的样式效果
+
+#### 顶部工具栏
+
+```
+[新建模板] [模板: 默认模板 ▼] [保存] [另存为] [导出] [导入]
+─────────────────────────────────────────────────────────
+名称: [___默认模板___] 标签: [___正式,项目___] 来源文档: [___项目方案书.docx___]
+```
+
+- **模板下拉框**：列出所有可用模板（内置 + 你自己保存的）。选一个就加载
+- **保存**：把当前修改写入当前模板文件
+- **另存为**：另存一个新模板到你的个人模板库，填写名称、标签、来源文档
+- **导出**：把模板导出成 `.json` 文件，可以发给同事
+- **导入**：把别人发给你的 `.json` 模板文件导入进来
+
+#### 各配置项说明
+
+**页面设置**
+| 选项 | 说明 |
+|------|------|
+| 纸张预设 | 选 A4/A3/A5/B5/Letter/Legal，也可以自定义宽高 |
+| 方向 | 纵向（竖着）或 横向（横着） |
+| 页边距 | 上/下/左/右边距（mm） |
+| 装订线 | 多留出来的装订空间 |
+| 起始页码 | 从第几页开始编号 |
+
+**页眉页脚**
+- 打印模式：单面打印 or 双面打印
+- 公式处理：保持原样 / 转为 OMML / 渲染为图片
+- 封面页/目录页/正文页分开设置：页眉文字、是否显示页脚、页码样式（阿拉伯数字、罗马数字、字母）
+- 首页不同 / 奇偶页不同：勾选后对应 Word 里的同名选项
+
+**封面**
+- 开启后可以为文档添加封面页
+- 如果有封面模板（.docx），可以加载，里面的 `{{占位符}}` 会被替换
+- 设置封面标题的字体和段落样式
+
+**签署页** / **修改记录页** / **目录页**
+- 各可独立开启/关闭
+- 签署页标题自动检测封面标题
+- 修改记录页可配置表格的表头/表体样式
+- 目录页可配置条目字体和缩进
+
+**标题（多级列表）**
+
+这是一个表格，每一行代表一级标题：
+
+| 级别 | 编号格式 | 包含上级 | 编号预览 |
+|------|---------|---------|---------|
+| 1 | 一、二、三 | ☑ 包含上级 | 一、 |
+| 2 | 1. / 2. | ☑ 包含上级 | 一、1. |
+| 3 | (1) / (2) | ☑ 包含上级 | 一、1.(1) |
+| 4 | 无编号 | ☐ 包含上级 | (无) |
+
+- 选中某一行后，下方可以编辑该级标题的字体和段落
+- "包含上级"勾选后，编号会带着上级一起显示（如 1.1.1 的效果）
+- 右侧"编号预览"列实时光看最终效果
+
+**正文**
+- 设置正文的字体（中文字体 + 英文字体）、字号、首行缩进、行距
+
+**表格**
+- 分"基础表"和"记录表"两种，分别配置表头和表体的字体段落样式
+- 可设置表头背景色
+
+**题注**
+- 图注前缀（"图"）、表注前缀（"表"）、公式前缀（"公式"）
+- 图注位置（图下方）、表注位置（表上方）
+- 编号模式：全局统一编号 / 按类型分别编号
+
+**代码块**
+- 等宽字体设置（默认 Consolas）
+- 背景色设置
+
+---
+
+### 第二部分：处理文档
+
+切换到 **文档处理** Tab。
+
+#### 1. 选择处理模式
+
+顶部有三个单选项：
+
+| 模式 | 名字 | 输入文件 | 需要模板 | 输出文件 | 干了什么 |
+|------|------|---------|---------|---------|---------|
+| **A** | Word 格式整理 | .docx | 是 | .docx | 混乱Word → MD → 格式化Word |
+| **B** | Word → MD | .docx | 否 | .md | 只把Word提取成Markdown文本 |
+| **C** | MD → Word | .md | 是 | .docx | 把Markdown文本转成格式化Word |
+
+> **最常用的是模式 A**：选一个模板，把一批 Word 文档变整齐。
+
+#### 2. 添加文件
+
+点击 **添加文件** 选单个或多个 Word 文档，或点击 **添加文件夹** 把整个文件夹（含子文件夹）的 Word 文档都加进来。
+
+每个文件前面有勾选框，默认全部勾选。你可以只留下想处理的文件：
+
+- **全选**：勾上所有文件
+- **取消全选**：取消所有勾选
+- 手动点某个文件前的 ☑ 也能切换
+
+#### 3. 选择模板
+
+从模板下拉框里选一个之前做好的模板。模式 B 不需要模板，模板区会自动隐藏。
+
+如果模板下拉框是空的，去**模板编辑** Tab 新建或导入一个。
+
+#### 4. 选择输出目录
+
+点 **选择输出目录**，指定处理后的文件放到哪个文件夹。
+
+#### 5. 开始处理
+
+点 **开始处理** 按钮，下方进度条和日志会显示处理进度。完成后会弹窗提示。
+
+---
+
+### 模板怎么共享
+
+1. 在 **模板编辑 Tab**，选好模板，点 **导出** 按钮
+2. 保存成 `.json` 文件
+3. 把 `.json` 文件发给同事（微信/邮件/U盘随你）
+4. 同事在他的电脑上打开程序，点 **导入**，选这个 `.json` 文件
+5. 模板就出现在他的模板下拉框里了
+
+---
+
+## 写 Markdown 来生成 Word
+
+如果你喜欢手写 Markdown 来生成文档：
+
+### 最简写法（只用标准 Markdown）
 
 ```markdown
-# 一级标题
-## 二级标题
+# 第一章 概述
+## 1.1 背景
 
-正文段落，**粗体**，*斜体*。
+这是正文段落，**重点内容加粗**，*术语用斜体*。
 
-![架构图](images/arch.png)
+![系统架构图](images/arch.png)
+*图 1 系统架构图*
 
-| 参数 | 说明 |
-|------|------|
-| 端口 | 8080 |
+| 参数名 | 默认值 | 说明 |
+|--------|--------|------|
+| 超时时间 | 30s | 请求最大等待时间 |
 
-- 列表项
+- 第一步：安装环境
+- 第二步：配置参数
 
 ```python
-def hello():
-    print("world")
+print("Hello World")
+```
 ```
 
-内联公式 $E=mc^2$
+系统会自动编号图/表、加书签、套模板里的字体样式。
 
-$$
-F = ma
-$$
-```
+### 进阶写法（YAML 头部控制封面/目录）
 
-系统自动完成：图/表/公式编号、标题书签生成、模板字体段落应用。
-
-### L2 增强（可选 YAML Frontmatter）
+在 Markdown 最开头加上：
 
 ```yaml
 ---
 cover_enabled: true
 cover_fields:
-  contract_no: "XXXX"
-  organization: "XX单位"
-  date: "2026-04"
-signature_enabled: true
-revision_enabled: true
+  contract_no: "HT-2026-001"
+  organization: "XX科技有限公司"
 toc_enabled: true
 ---
 ```
 
-### L3 精确（全功能，用于 Word→MD→Word 管道）
+### 高级写法（交叉引用、脚注）
 
 ```markdown
-<!-- section: cover -->
-<!-- section: body -->
+## 系统设计  {#sec:design}
 
-## 二级标题  {#sec:xxx}
+架构如图所示：
 
-![架构图](images/arch.png)
-*图 1 架构图* {#fig:arch}
+![架构](arch.png)
+*图 1 系统架构* {#fig:arch}
 
-*表 1 参数列表* {#tbl:params}
-| 参数 | 值 |
-|------|-----|
-| A    | 1  |
+如图 1 所示...       → 点击可跳转到图 1
 
-$$
-E = mc^2
-$$ {#eq:einstein}
+参考：[官网](https://example.com)  → 外部超链接
 
-如[图 1](#fig:arch)所示...         → Word REF 域（可点击跳转）
-参考：[Google](https://google.com)  → Word HYPERLINK
-
-正文内容[^1]                       → Word 脚注
-[^1]: 这是脚注的详细内容。
-
-<!-- visio: attachments/x.vsd -->   → Visio OLE 嵌入
+需要说明的术语[^note1]
+[^note1]: 这是脚注的详细解释。
 ```
 
-### 列表编号
+---
 
-```markdown
-A. 项目一      → A/B/C 字母编号
-B. 项目二
-   a. 子项一   → a/b/c 字母编号
-```
+## 常见问题
 
-### MD 语法 → Word 元素对照
+### Q: "python 不是内部或外部命令"
 
-| MD 语法 | Word 元素 |
-|---------|----------|
-| `# ~ #####` | Heading 段落 |
-| `**text**` / `*text*` | 粗体 / 斜体 |
-| `` `code` `` | 等宽字体 run |
-| ` ```语言 代码块 ``` ` | 代码块 + 底纹 |
-| `![alt](path)` + 题注 | 图片 + 题注段落 + bookmark |
-| `*表注*` + 表格 | 题注段落 + Word table |
-| `$$...$$` | LaTeX → PNG → 嵌入 |
-| `[text](#fig:xxx)` | REF 域 → bookmark（可点击跳转） |
-| `[text](#tbl:xxx)` | REF 域 → 表格跳转 |
-| `[text](#eq:xxx)` | REF 域 → 公式跳转 |
-| `[text](#sec:xxx)` | REF 域 → 标题跳转 |
-| `[text](https://...)` | HYPERLINK 超链接 |
-| `[^id]` | FOOTNOTE 脚注 |
-| `{#id}` | Word bookmark 锚点 |
-| `<!-- section: xxx -->` | Word 分节符 |
-| `<!-- visio: path -->` | Visio OLE 嵌入 |
+安装 Python 时没有勾选 **Add Python to PATH**。解决方法：
+1. 重新打开 Python 安装器
+2. 选择 **Modify**
+3. 勾选 **Add Python to PATH**
+4. 或者用 `py` 代替 `python` 命令
 
-### 降级策略
+### Q: pip install 报错 "Could not find a version"
 
-| 缺失项 | 行为 |
-|--------|------|
-| 无 YAML frontmatter | 使用模板默认值，全部段落为 body |
-| 无 `<!-- section -->` | 整个文档为一个节 |
-| 无 `{#id}` 书签 | 自动生成 `fig:N` / `tbl:N` / `eq:N` |
-| `[text](#id)` 指向不存在的 bookmark | 降级为纯文本 |
-| 图片路径不存在 | 插入占位符文本 + 警告 |
-| LaTeX 渲染失败 | 插入原始 LaTeX + 降级提示 |
-
-## 文件结构
-
-```
-docformatter/
-├── main.py                          # 程序入口
-├── models/
-│   └── template_config.py           # 数据模型（TemplateConfig 等）
-├── core/
-│   ├── word2md_converter.py         # Word→MD 转换器
-│   ├── md2word_converter.py         # MD→Word 转换器
-│   ├── document_analyzer.py         # Word 文档结构分析
-│   ├── header_footer.py             # 页眉页脚管理器
-│   ├── cover_replacer.py            # 封面占位符替换
-│   ├── table_handler.py             # 表格格式化
-│   ├── numbering.py                 # 图/表/公式编号管理 (@deprecated)
-│   ├── toc_generator.py             # 目录生成 (@deprecated)
-│   ├── cross_reference.py           # 交叉引用管理 (@deprecated)
-│   ├── formatter.py                 # 旧格式化引擎 (@deprecated)
-│   └── style_mapper.py              # 样式映射 (@deprecated)
-├── gui/
-│   ├── main_window.py               # 主窗口（2 个 Tab）
-│   ├── template_config.py           # 模板编辑 Tab
-│   └── doc_process.py               # 文档处理 Tab（3 种模式）
-├── templates/
-│   └── template_io.py               # 模板序列化/反序列化
-├── utils/
-│   ├── font_formatter.py            # 统一字体/段落格式化
-│   ├── placeholder_scanner.py        # 占位符扫描
-│   └── logger.py                    # 日志
-└── requirements.txt
-```
-
-## 依赖
-
-```
-python-docx >= 0.8
-PyQt6 >= 6.6
-markdown-it-py >= 3.0
-matplotlib >= 3.8
-PyYAML >= 6.0
-lxml
-```
-
-## 运行测试
-
+可能是 pip 版本太旧，先升级：
 ```bash
-# Word→MD
-python -c "from docformatter.core.word2md_converter import convert_word_to_markdown; convert_word_to_markdown('sample.docx')"
+python -m pip install --upgrade pip
+```
 
-# MD→Word
-python -c "from docformatter.core.md2word_converter import MD2WordConverter; MD2WordConverter().convert('sample.md', 'output.docx')"
+### Q: 启动后窗口一闪就没了
+
+在命令行里运行（不要双击 `main.py`），这样能看到错误信息：
+```bash
+python -m docformatter.main
+```
+
+### Q: 处理完的文档字体还是不对
+
+检查模板里的"正文"字体设置是否改对了。注意 Word 文档的样式中"正文"段落的字体要和模板一致。
+
+### Q: 模板怎么删掉？
+
+用户模板存储在：
+- Windows：`C:\Users\<你的用户名>\AppData\Roaming\DocFormatter\templates\`
+- macOS：`~/Library/Application Support/DocFormatter/templates/`
+- Linux：`~/.local/share/DocFormatter/templates/`
+
+直接删除对应的 `.json` 文件即可。内置模板不能删除。
+
+### Q: 处理失败怎么办
+
+看日志区的最下面几行，一般会提示具体是哪个文件、什么原因。常见原因：
+- 文件正在被 Word 打开（关闭 Word 再试）
+- 文件损坏（用 Word 打开另存为新文件）
+- 图片路径不存在（检查 Markdown 里的图片引用）
+
+### Q: 中文字体没找到
+
+模板里的中文字体下拉框是读取你系统已安装的字体。如果某个字体没有（比如选了一个只在同事电脑上有的字体），程序会用宋体替代。
+
+---
+
+## 项目结构（供开发者参考）
+
+```
+WordFormat-Covert/
+├── docformatter/
+│   ├── main.py                      # 程序入口
+│   ├── gui/
+│   │   ├── main_window.py           # 主窗口（2 个 Tab）
+│   │   ├── template_config.py       # 模板编辑 Tab
+│   │   └── doc_process.py           # 文档处理 Tab
+│   ├── core/
+│   │   ├── word2md_converter.py     # Word → Markdown 转换
+│   │   ├── md2word_converter.py     # Markdown → Word 转换
+│   │   ├── document_analyzer.py     # Word 文档结构分析
+│   │   ├── header_footer.py         # 页眉页脚管理
+│   │   ├── cover_replacer.py        # 封面占位符替换
+│   │   └── table_handler.py         # 表格格式化
+│   ├── models/
+│   │   └── template_config.py       # 数据模型定义
+│   ├── templates/
+│   │   ├── template_io.py           # 模板序列化
+│   │   ├── template_manager.py      # 模板管理器
+│   │   └── builtin/
+│   │       └── default.json         # 内置默认模板
+│   └── utils/
+│       ├── font_formatter.py        # 字体段落格式化
+│       ├── placeholder_scanner.py   # 占位符扫描
+│       └── logger.py               # 日志
+└── README.md
 ```
